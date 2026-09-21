@@ -93,9 +93,12 @@ replaceRequired(
   const rel = 'desktop/bootstrap.ts';
   let s = read(rel);
   s = s.replace(
-    "import { app, dialog } from 'electron';\nimport { RUNTIME_ASSET_ADVICE } from './runtime-preflight.ts';",
-    "import { app, dialog } from 'electron';\nimport { mkdirSync } from 'node:fs';\nimport { dirname, join } from 'node:path';\nimport { RUNTIME_ASSET_ADVICE } from './runtime-preflight.ts';",
+    "import { app, dialog } from 'electron';",
+    "import { app, dialog } from 'electron';\nimport { mkdirSync } from 'node:fs';\nimport { dirname, join } from 'node:path';",
   );
+  if (!s.includes("import { mkdirSync } from 'node:fs';") || !s.includes("import { dirname, join } from 'node:path';")) {
+    throw new Error('desktop/bootstrap.ts portable imports were not applied');
+  }
   const anchor = "// Remotion renders export frames inside this process (main + headless tabs).";
   if (!s.includes(anchor)) throw new Error('desktop/bootstrap.ts portable anchor not found');
   const portable = `
