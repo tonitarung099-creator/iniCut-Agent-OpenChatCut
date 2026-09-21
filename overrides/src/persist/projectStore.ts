@@ -94,7 +94,17 @@ export function docFromTimeline(ts: TimelineState, name = 'Urutan 1'): ProjectDo
 
 /** The sole public boundary for persisted documents, imports, templates and snapshots. */
 export function migrateProjectDoc(v: unknown, options?: ProjectMigrationOptions): ProjectDoc | null {
-  return runProjectMigrations(v, options)?.doc ?? null;
+  const doc = runProjectMigrations(v, options)?.doc ?? null;
+  if (!doc) return null;
+  // Sequence names from older builds may contain Chinese. They are UI labels,
+  // so normalize them to Indonesian while preserving the sequence IDs/content.
+  return {
+    ...doc,
+    timelines: doc.timelines.map((timeline, index) => ({
+      ...timeline,
+      name: CJK_VISIBLE.test(timeline.name) ? `Urutan ${index + 1}` : timeline.name,
+    })),
+  };
 }
 
 export type { ProjectMigrationOptions, ProjectMigrationProgress };
@@ -252,9 +262,23 @@ export async function saveCreativeMode(projectId: string, skillId: string | null
 }
 
 
+const CJK_VISIBLE = /[\u3400-\u9FFF\uF900-\uFAFF]/;
+
+function minicutProjectName(meta: ProjectMeta): string {
+  const name = typeof meta.name === 'string' ? meta.name.trim() : '';
+  if (!CJK_VISIBLE.test(name)) return name || `Proyek MiniCut ${meta.id.slice(0, 6)}`;
+  // Older builds generated Chinese project names. Keep the persisted bytes
+  // untouched but never expose Chinese text in MiniCut's Indonesian UI.
+  return `Proyek MiniCut ${meta.id.slice(0, 6)}`;
+}
+
 async function readIndexStore(): Promise<ProjectMeta[]> {
   const raw = await idbGet<unknown>(INDEX_KEY);
-  return Array.isArray(raw) ? (raw as ProjectMeta[]).filter((m) => m && typeof m.id === 'string') : [];
+  return Array.isArray(raw)
+    ? (raw as ProjectMeta[])
+      .filter((m) => m && typeof m.id === 'string')
+      .map((meta) => ({ ...meta, name: minicutProjectName(meta) }))
+    : [];
 }
 
 export const projectIndexCoordinator = new ProjectIndexCoordinator(
