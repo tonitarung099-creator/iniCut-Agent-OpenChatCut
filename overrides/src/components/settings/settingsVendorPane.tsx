@@ -1,5 +1,5 @@
 // Provider configuration page, field rendering, and connection tests.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { theme, themeAlpha } from '../../theme';
 import { t, useT } from '../../i18n/locale';
 import { VendorIcon } from './vendorIcons';
