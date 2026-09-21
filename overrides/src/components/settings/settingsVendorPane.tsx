@@ -12,6 +12,7 @@ import type { CopilotSettingsController } from './useCopilotSettings';
 import { shouldRenderModelPicker } from './codexReasoning';
 import { llmProviderConfigNames, normalizeLlmProvider } from '../../../shared/llm-providers';
 import { MODEL_CAPABILITY_OVERRIDES_KEY } from '../../../shared/model-capabilities';
+import { parseGeminiApiKeys } from '../../../shared/gemini-key-pool';
 import { CopilotVendorPane } from './CopilotVendorPane';
 import { ModelCapabilityEditor } from './ModelCapabilityEditor';
 import { XaiOauthVendorPane } from './XaiOauthVendorPane';
@@ -411,16 +412,7 @@ interface TextInputProps {
 }
 
 function normalizeGeminiKeyPool(raw: string): string {
-  const seen = new Set<string>();
-  const keys: string[] = [];
-  for (const token of raw.split(/[\s,;]+/)) {
-    const key = token.trim();
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    keys.push(key);
-    if (keys.length >= 100) break;
-  }
-  return keys.join(',');
+  return parseGeminiApiKeys(raw).join(',');
 }
 
 function geminiKeyPoolDisplay(raw: string): string {
