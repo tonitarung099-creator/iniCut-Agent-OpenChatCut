@@ -80,7 +80,7 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
 }
 
 function sendNotFound(res: ServerResponse): void {
-  sendJson(res, 404, { error: 'session not found or expired' });
+  sendJson(res, 404, { error: 'sesi tidak ditemukan atau sudah kedaluwarsa' });
 }
 
 function contentLength(req: IncomingMessage): number | null {
@@ -108,7 +108,7 @@ async function streamUpload(req: IncomingMessage, destination: string, maxBytes:
   const limiter = new Transform({
     transform(chunk: Buffer, _encoding, callback) {
       bytes += chunk.length;
-      callback(bytes > maxBytes ? new UploadError(413, 'file too large') : null, chunk);
+      callback(bytes > maxBytes ? new UploadError(413, 'file terlalu besar') : null, chunk);
     },
   });
   try {
@@ -213,7 +213,7 @@ export class MobileUploadService {
 
   async createSession(locale: MobilePageLocale = 'id'): Promise<MobileUploadSessionSnapshot> {
     const addresses = this.options.addresses();
-    if (addresses.length === 0) throw new Error('no LAN IPv4 address available');
+    if (addresses.length === 0) throw new Error('tidak ada alamat IPv4 LAN yang tersedia');
     await this.ensureServer();
     const id = randomUUID();
     const token = randomBytes(24).toString('base64url');
@@ -265,7 +265,7 @@ export class MobileUploadService {
       server.once('error', reject);
       server.listen(0, this.options.bindHost, () => {
         const address = server.address();
-        if (!address || typeof address === 'string') { reject(new Error('mobile upload server failed to bind')); return; }
+        if (!address || typeof address === 'string') { reject(new Error('server unggahan ponsel gagal dibuka')); return; }
         this.server = server;
         this.port = address.port;
         resolve();
@@ -303,7 +303,7 @@ export class MobileUploadService {
         try { await upload; } finally { session.activeUploads.delete(upload); }
         return;
       }
-      sendJson(res, 405, { error: 'method not allowed' });
+      sendJson(res, 405, { error: 'metode tidak diizinkan' });
     } catch (error) {
       const status = error instanceof UploadError ? error.status : 500;
       sendJson(res, status, { error: error instanceof Error ? error.message : String(error) });
@@ -326,22 +326,22 @@ export class MobileUploadService {
     res: ServerResponse,
   ): Promise<void> {
     const declared = contentLength(req);
-    if (declared === 0) throw new UploadError(400, 'empty body');
-    if (declared != null && declared > this.options.maxBytes) throw new UploadError(413, 'file too large');
+    if (declared === 0) throw new UploadError(400, 'isi unggahan kosong');
+    if (declared != null && declared > this.options.maxBytes) throw new UploadError(413, 'file terlalu besar');
     const originalName = (url.searchParams.get('name') ?? '').replace(/^.*[\\/]/, '').slice(0, 180);
-    if (!isSafeUploadName(originalName)) throw new UploadError(400, 'unsafe or missing name');
+    if (!isSafeUploadName(originalName)) throw new UploadError(400, 'nama file tidak aman atau tidak tersedia');
     const descriptor = mediaDescriptor(originalName, req.headers['content-type']);
-    if (!descriptor) throw new UploadError(415, 'unsupported media type');
+    if (!descriptor) throw new UploadError(415, 'jenis media tidak didukung');
     const storedName = `${randomUUID()}${descriptor.extension}`;
     const directory = this.options.uploadDirectory();
     const partPath = join(directory, `.${storedName}.part`);
     const finalPath = join(directory, storedName);
     await mkdir(directory, { recursive: true });
     const bytes = await streamUpload(req, partPath, this.options.maxBytes);
-    if (bytes === 0) { await unlink(partPath).catch(() => undefined); throw new UploadError(400, 'empty body'); }
+    if (bytes === 0) { await unlink(partPath).catch(() => undefined); throw new UploadError(400, 'isi unggahan kosong'); }
     if (!await validateMediaSignature(partPath, descriptor.mime)) {
       await unlink(partPath).catch(() => undefined);
-      throw new UploadError(415, 'media content does not match its declared type');
+      throw new UploadError(415, 'isi media tidak cocok dengan jenis file yang dinyatakan');
     }
     await rename(partPath, finalPath);
     try {
