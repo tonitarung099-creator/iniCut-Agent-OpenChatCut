@@ -63,6 +63,10 @@ jobs:
         working-directory: upstream
         run: npm ci
 
+      - name: Uji pool API Key Gemini MiniCut
+        working-directory: upstream
+        run: npx tsx shared/gemini-key-pool.verify.ts
+
       - name: Sinkronkan sumber shader
         working-directory: upstream
         run: node scripts/sync-shader-sources.mjs
