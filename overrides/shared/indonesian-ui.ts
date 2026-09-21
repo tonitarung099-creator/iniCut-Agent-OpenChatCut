@@ -889,6 +889,13 @@ const DIRECT: Record<string, string> = {
   '选择模型': 'Pilih model',
   '测试连接': 'Uji koneksi',
 
+  'My Media': 'Media Saya',
+  'Library': 'Pustaka',
+  'Third-party font licenses': 'Lisensi font pihak ketiga',
+  'Context': 'Konteks',
+  'Tools': 'Alat',
+  'Validates the endpoint and key, then loads models available from this API': 'Memeriksa endpoint dan API Key, lalu memuat model yang tersedia dari API ini',
+
   // Chinese source keys that are used outside the regular dictionary path.
   '选择素材保存目录': 'Pilih folder penyimpanan media',
   '选择导出目录': 'Pilih folder ekspor',
@@ -983,8 +990,11 @@ export function indonesianUiText(input: unknown, original?: unknown): string {
   // Short model IDs / format names are technical identifiers, not UI prose.
   if (MODELISH.test(raw) && (/[0-9_.:/@-]/.test(raw) || raw.length <= 5)) return raw;
 
-  // Never leak an untranslated foreign-language sentence into the MiniCut UI.
-  return 'Teks antarmuka belum diterjemahkan';
+  // If an upstream English sentence has not been translated yet, keep the
+  // readable English semantic fallback rather than showing an opaque
+  // "belum diterjemahkan" placeholder. Chinese is still blocked above.
+  // This makes missing Indonesian coverage obvious without ever leaking CJK.
+  return converted || raw;
 }
 
 export function containsCjk(input: unknown): boolean {
