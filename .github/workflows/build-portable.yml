@@ -89,6 +89,54 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npm run desktop:dist:win
 
+      - name: Uji jalankan MiniCut Portable
+        shell: pwsh
+        env:
+          CC_SMOKE: "1"
+          CC_SMOKE_RENDER: "1"
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $built = @(Get-ChildItem -LiteralPath upstream/release -Filter 'MiniCut-Portable-*.exe' -File)
+          if ($built.Count -ne 1) {
+            throw "Harus ada tepat satu MiniCut Portable EXE, ditemukan $($built.Count)"
+          }
+
+          $portableDir = Join-Path $env:RUNNER_TEMP "minicut-portable-smoke-$PID"
+          Remove-Item -LiteralPath $portableDir -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $portableDir | Out-Null
+          $portableExe = Join-Path $portableDir 'MiniCut.exe'
+          Copy-Item -LiteralPath $built[0].FullName -Destination $portableExe
+
+          $stdout = Join-Path $portableDir 'smoke-stdout.log'
+          $stderr = Join-Path $portableDir 'smoke-stderr.log'
+          $process = Start-Process -FilePath $portableExe -PassThru `
+            -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          $null = $process.Handle
+          $finished = $process.WaitForExit(420000)
+          if (-not $finished) {
+            taskkill /T /F /PID $process.Id 2>$null | Out-Null
+          }
+
+          Write-Host '--- MiniCut portable smoke stdout ---'
+          if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout }
+          Write-Host '--- MiniCut portable smoke stderr ---'
+          if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr }
+
+          $smokeOk = (Test-Path -LiteralPath $stdout) -and `
+            (Select-String -LiteralPath $stdout -Pattern 'SMOKE-OK' -Quiet)
+          if (-not $smokeOk) {
+            if (-not $finished) {
+              throw 'MiniCut Portable masih berjalan setelah 420 detik dan tidak mencapai SMOKE-OK.'
+            }
+            throw "MiniCut Portable gagal smoke test dengan exit code $($process.ExitCode)"
+          }
+
+          $portableData = Join-Path $portableDir 'data'
+          if (-not (Test-Path -LiteralPath $portableData -PathType Container)) {
+            throw "Folder data portable tidak dibuat di samping MiniCut.exe"
+          }
+
+          Write-Host "MiniCut Portable berhasil dijalankan dan memakai data lokal: $portableData"
       - name: Tampilkan hasil build
         shell: pwsh
         run: |
