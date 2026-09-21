@@ -2,7 +2,7 @@
 
 import { indonesianUiText } from '../shared/indonesian-ui.ts';
 
-export type UiLocale = 'id';
+export type UiLocale = 'id' | 'zh' | 'en' | 'it' | 'ru';
 
 export function parseUiLocale(_value: unknown): UiLocale {
   return 'id';
