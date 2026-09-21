@@ -152,11 +152,11 @@ replaceRequired(
   ]);
   for (const [from, to] of replacements) s = s.split(from).join(to);
 
-  const bootAnchor = "async function boot(): Promise<void> {\n  await app.whenReady();";
-  if (!s.includes(bootAnchor)) throw new Error('desktop/main.ts boot anchor not found');
+  const bootPattern = /async function boot\(\): Promise<void> \{\r?\n  await app\.whenReady\(\);/;
+  if (!bootPattern.test(s)) throw new Error('desktop/main.ts boot anchor not found');
   s = s.replace(
-    bootAnchor,
-    bootAnchor + "\n  // MiniCut uses in-app controls; remove Electron's default native menu so it cannot leak another UI language.\n  Menu.setApplicationMenu(null);",
+    bootPattern,
+    (match) => match + "\n  // MiniCut uses in-app controls; remove Electron's default native menu so it cannot leak another UI language.\n  Menu.setApplicationMenu(null);",
   );
   write(rel, s);
 }
