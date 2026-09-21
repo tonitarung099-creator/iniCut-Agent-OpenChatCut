@@ -71,8 +71,13 @@ replaceRequired(
 );
 replaceRequired(
   'config/electron-builder.config.mjs',
-  "owner: '0xsline',\n    repo: 'OpenChatCut',",
-  "owner: 'tonitarung099-creator',\n    repo: 'iniCut-Agent-OpenChatCut',",
+  "owner: '0xsline',",
+  "owner: 'tonitarung099-creator',",
+);
+replaceRequired(
+  'config/electron-builder.config.mjs',
+  "repo: 'OpenChatCut',",
+  "repo: 'iniCut-Agent-OpenChatCut',",
 );
 replaceRequired(
   'config/electron-builder.config.mjs',
@@ -158,13 +163,8 @@ replaceRequired(
 {
   const rel = 'src/components/TopBar.tsx';
   let s = read(rel);
-  const start = s.indexOf('export function LocaleToggle() {');
-  const endMarker = '\n}\n\ninterface TopBarProps';
-  const end = s.indexOf(endMarker, start);
-  if (start < 0 || end < 0) throw new Error('LocaleToggle block not found');
-  s = s.slice(0, start)
-    + "export function LocaleToggle() { return null; }"
-    + s.slice(end + 2);
+  if (!s.includes('<LocaleToggle />')) throw new Error('Locale toggle call not found');
+  s = s.replace('<LocaleToggle />', '');
   write(rel, s);
 }
 
