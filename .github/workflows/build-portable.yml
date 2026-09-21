@@ -63,6 +63,10 @@ jobs:
         working-directory: upstream
         run: npm ci
 
+      - name: Sinkronkan sumber shader
+        working-directory: upstream
+        run: node scripts/sync-shader-sources.mjs
+
       - name: Build MiniCut Portable
         working-directory: upstream
         env:
