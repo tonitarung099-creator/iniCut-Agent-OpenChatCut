@@ -574,7 +574,6 @@ const DIRECT: Record<string, string> = {
   'Jog back one frame': 'Mundur satu frame',
   'Jog forward one frame': 'Maju satu frame',
   'Paste Effects': 'Tempel efek',
-  'Duplicate': 'Duplikat',
   'Selection Mode': 'Mode pilih',
   'Trim Edit Mode': 'Mode edit trim',
   'Slip Edit Mode': 'Mode edit slip',
