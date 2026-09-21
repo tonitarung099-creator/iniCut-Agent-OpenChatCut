@@ -4,11 +4,12 @@ MiniCut Agent adalah turunan yang dimodifikasi dari [OpenChatCut](https://github
 
 ## Target proyek
 
-- Windows **portable**: unduh ZIP/artifact, ekstrak, lalu jalankan aplikasi tanpa installer.
+- Windows **portable folder**: unduh ZIP/artifact, ekstrak seluruh folder, lalu jalankan `MiniCut.exe` tanpa installer.
 - Antarmuka utama **Bahasa Indonesia**.
 - Tidak ada pilihan bahasa Mandarin/Rusia/Italia di UI.
 - Gemini dipertahankan sebagai provider AI utama dan akan dikembangkan lebih lanjut sebagai agent pengendali editor.
-- Data aplikasi portable disimpan di folder aplikasi, bukan dipaksa ke Program Files.
+- Distribusi berisi banyak file/folder runtime di samping `MiniCut.exe`; ini sengaja agar lebih sederhana, cepat dibangun, dan mudah diperbaiki daripada single-file EXE.
+- Data aplikasi portable disimpan di subfolder `data/` di folder aplikasi, bukan dipaksa ke Program Files.
 - Fondasi editor tetap mengikuti OpenChatCut agar timeline, agent tools, media, caption, export, dan MCP tidak dibangun ulang dari nol.
 
 ## Cara kerja repository ini
@@ -28,13 +29,21 @@ Model ini membuat perubahan MiniCut terpisah dan mudah diaudit tanpa mencampur s
 
 Workflow: `.github/workflows/build-portable.yml`
 
-Hasil yang diharapkan:
+Hasil yang diharapkan adalah artifact ZIP **MiniCut-Portable-Windows-x64**. Setelah diekstrak, strukturnya berbentuk folder aplikasi, bukan single-file EXE:
 
-```
-MiniCut-Portable-<version>-x64.exe
+```text
+MiniCut/
+├── MiniCut.exe
+├── resources/
+├── locales/
+├── data/
+├── BACA_SAYA.txt
+└── file runtime/DLL pendukung lainnya
 ```
 
-Aplikasi portable menggunakan folder `data/` di samping executable untuk konfigurasi, cache, log, dan data runtime.
+Cara pakai: ekstrak ZIP sampai selesai, buka folder `MiniCut`, lalu jalankan `MiniCut.exe`. Jangan memisahkan EXE dari file pendukungnya dan jangan menjalankan aplikasi langsung dari dalam ZIP.
+
+Folder `data/` berada di samping executable dan dipakai untuk konfigurasi, cache, log, project/runtime state, dan data portable lainnya. Untuk memindahkan MiniCut ke lokasi atau komputer lain, salin seluruh folder `MiniCut`.
 
 ## Bahasa
 
@@ -46,4 +55,4 @@ Istilah teknis/nama produk seperti Gemini, API, FFmpeg, FPS, SRT, MCP, GPU, JSON
 
 OpenChatCut berlisensi GNU AGPL v3 atau versi lebih baru. Modifikasi MiniCut mengikuti lisensi yang sama. Lihat `LICENSE` dan `NOTICE.md`.
 
-> Status: fondasi portable + penguncian Bahasa Indonesia sedang dibangun. Fitur MiniCut khusus akan ditambahkan bertahap di atas basis ini.
+> Status: fondasi portable-folder + penguncian Bahasa Indonesia sedang dibangun dan diuji otomatis. Fitur MiniCut khusus akan ditambahkan bertahap di atas basis ini.
