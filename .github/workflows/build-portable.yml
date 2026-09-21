@@ -71,6 +71,10 @@ jobs:
         working-directory: upstream
         run: npx tsx shared/indonesian-time.verify.ts
 
+      - name: Uji routing perintah Agent Bahasa Indonesia
+        working-directory: upstream
+        run: npx tsx src/agent/tool-routing.minicut.verify.ts
+
       - name: Sinkronkan sumber shader
         working-directory: upstream
         run: node scripts/sync-shader-sources.mjs
