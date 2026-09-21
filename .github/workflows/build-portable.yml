@@ -67,7 +67,24 @@ jobs:
 
       - name: Instal dependensi
         working-directory: upstream
-        run: npm ci
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          for ($attempt = 1; $attempt -le 3; $attempt++) {
+            Write-Host "Percobaan npm ci $attempt/3"
+            npm ci
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host 'Dependensi berhasil dipasang.'
+              exit 0
+            }
+
+            Write-Warning "npm ci gagal pada percobaan $attempt. Menunggu lalu mencoba lagi..."
+            if (Test-Path -LiteralPath 'node_modules') {
+              cmd /c rmdir /s /q node_modules 2>$null
+            }
+            if ($attempt -lt 3) { Start-Sleep -Seconds (15 * $attempt) }
+          }
+          throw 'Instal dependensi gagal setelah 3 percobaan.'
 
       - name: Uji pool API Key Gemini MiniCut
         working-directory: upstream
