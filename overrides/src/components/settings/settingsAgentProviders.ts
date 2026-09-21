@@ -80,7 +80,7 @@ const COPILOT_PAGE: SettingsVendorPage = {
   vendor: 'copilot',
   title: 'GitHub Copilot',
   connection: 'copilot',
-  note: 'Gunakan langganan GitHub Copilot. Copilot CLI resmi mengelola login dan kredensial (jalankan copilot login di terminal),
+  note: 'Gunakan langganan GitHub Copilot. Copilot CLI resmi mengelola login dan kredensial (jalankan copilot login di terminal),'
     + ' MiniCut memakai Copilot SDK untuk menjalankan alat edit dan tidak membaca atau menampilkan kredensial.'
     + ' Status sesi MiniCut disimpan terpisah dan tidak mengganggu konfigurasi Copilot pribadi.',
   fields: [
