@@ -20,8 +20,10 @@ const many = Array.from({ length: 120 }, (_, index) => `key-${index}`).join('\n'
 assert.equal(parseGeminiApiKeys(many).length, 100, 'Gemini key pool must cap at 100');
 
 const modelSelection = readFileSync('src/agent/model-selection.ts', 'utf8');
-assert.match(modelSelection, /preset\.id === 'gemini'/);
-assert.match(modelSelection, /return \[\.\.\.apiModelChoices\]/);
+assert.match(modelSelection, /candidate\.id === 'gemini'/);
+assert.match(modelSelection, /provider: 'gemini'/);
+assert.match(modelSelection, /const choices: readonly AgentModelChoice\[\] = choice \? \[choice\] : \[\]/);
+assert.match(modelSelection, /Gemini-only by design/);
 
 const execution = readFileSync('server/agent-runs/execution-input.ts', 'utf8');
 assert.match(execution, /effectiveProvider = 'gemini'/);
