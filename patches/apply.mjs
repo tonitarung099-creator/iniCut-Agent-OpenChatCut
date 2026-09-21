@@ -146,8 +146,18 @@ replaceRequired(
     ["title: '选择导出文件'", "title: 'Pilih file ekspor'"],
     ["throw new Error('导出文件名无效')", "throw new Error('Nama file ekspor tidak valid')"],
     ["title: '文字稿'", "title: 'Transkrip'"],
+    ["title: '选择允许 Agent 访问的素材文件夹'", "title: 'Pilih folder media yang boleh diakses Agent'"],
+    ["title: 'OpenChatCut'", "title: 'MiniCut'"],
+    ["dialog.showErrorBox('OpenChatCut 启动失败 / failed to start', detail)", "dialog.showErrorBox('MiniCut gagal dijalankan', detail)"],
   ]);
   for (const [from, to] of replacements) s = s.split(from).join(to);
+
+  const bootAnchor = "async function boot(): Promise<void> {\n  await app.whenReady();";
+  if (!s.includes(bootAnchor)) throw new Error('desktop/main.ts boot anchor not found');
+  s = s.replace(
+    bootAnchor,
+    bootAnchor + "\n  // MiniCut uses in-app controls; remove Electron's default native menu so it cannot leak another UI language.\n  Menu.setApplicationMenu(null);",
+  );
   write(rel, s);
 }
 
