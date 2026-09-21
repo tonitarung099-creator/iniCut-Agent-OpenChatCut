@@ -75,6 +75,10 @@ jobs:
         working-directory: upstream
         run: npx tsx src/agent/tool-routing.minicut.verify.ts
 
+      - name: Audit UI khusus Bahasa Indonesia
+        working-directory: upstream
+        run: npx tsx src/i18n/minicut-indonesian.verify.ts
+
       - name: Sinkronkan sumber shader
         working-directory: upstream
         run: node scripts/sync-shader-sources.mjs
