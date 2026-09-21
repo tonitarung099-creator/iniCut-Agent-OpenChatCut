@@ -45,19 +45,47 @@ async function assertNoVisibleCjk(win: BrowserWindow, surface: string): Promise<
   console.log(`[smoke] Indonesian UI has no visible CJK on ${surface}`);
 }
 
-async function openSettingsForLocaleAudit(win: BrowserWindow): Promise<boolean> {
+async function waitForUiReady(win: BrowserWindow): Promise<void> {
+  const deadline = Date.now() + 12_000;
+  while (Date.now() < deadline) {
+    const state = await win.webContents.executeJavaScript(`(() => {
+      const buttons = [...document.querySelectorAll('button')];
+      const hasSettings = buttons.some((button) => {
+        const label = button.getAttribute('aria-label') || button.getAttribute('title') || button.textContent || '';
+        return /Pengaturan/i.test(label);
+      });
+      const text = String(document.body?.innerText || '').replace(/\\s+/g, ' ').trim();
+      return { ready: document.readyState, hasSettings, textLength: text.length };
+    })()`) as { ready?: string; hasSettings?: boolean; textLength?: number };
+    if (state.ready === 'complete' && state.hasSettings && (state.textLength ?? 0) > 20) return;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error('MiniCut UI did not become ready with an Indonesian Settings control');
+}
+
+async function openSettingsForLocaleAudit(win: BrowserWindow): Promise<void> {
   const clicked = await win.webContents.executeJavaScript(`(() => {
     const buttons = [...document.querySelectorAll('button')];
     const target = buttons.find((button) => {
-      const label = button.getAttribute('aria-label') || button.getAttribute('title') || '';
-      return /Pengaturan/i.test(label) && /API/i.test(label);
+      const label = button.getAttribute('aria-label') || button.getAttribute('title') || button.textContent || '';
+      return /Pengaturan/i.test(label);
     });
     if (!target) return false;
     target.click();
     return true;
   })()`) as boolean;
-  if (clicked) await new Promise((resolve) => setTimeout(resolve, 600));
-  return clicked;
+  if (!clicked) throw new Error('MiniCut Settings button could not be opened for locale audit');
+
+  const deadline = Date.now() + 8_000;
+  while (Date.now() < deadline) {
+    const opened = await win.webContents.executeJavaScript(`(() => {
+      const text = String(document.body?.innerText || '').replace(/\\s+/g, ' ');
+      return /Google\\s*[·•-]?\\s*Gemini/i.test(text) && /API Key Gemini/i.test(text);
+    })()`) as boolean;
+    if (opened) return;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error('MiniCut Gemini Settings did not finish opening for locale audit');
 }
 
 export async function runDesktopSmokeProbe(
@@ -137,14 +165,18 @@ export async function runDesktopSmokeProbe(
   }
   console.log('[smoke] desktop native inference preload ok');
 
-  // Release gate: MiniCut is Indonesian-only. Fail the packaged executable if
-  // any visible Chinese text survives on the dashboard or settings surface.
+  // Release gate: MiniCut is Indonesian-only. Wait for the real React UI,
+  // then fail the packaged executable if Chinese survives either the main
+  // surface or the actual Gemini Settings dialog.
+  await waitForUiReady(win);
   await assertNoVisibleCjk(win, 'dashboard/editor');
-  if (await openSettingsForLocaleAudit(win)) {
-    await assertNoVisibleCjk(win, 'settings');
-  } else {
-    console.log('[smoke] settings button not present on this surface; current UI audit passed');
+  await openSettingsForLocaleAudit(win);
+  await assertNoVisibleCjk(win, 'Gemini settings');
+  const windowTitle = win.getTitle();
+  if (!/MiniCut/i.test(windowTitle)) {
+    throw new Error(`Packaged window title is not MiniCut: ${windowTitle}`);
   }
+  console.log('[smoke] MiniCut branding and Indonesian Gemini settings verified');
 
   if (render) {
     // The render runs BEFORE the renderer-recovery phase: on the v0.2.12
