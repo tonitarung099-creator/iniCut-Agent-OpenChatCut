@@ -18,7 +18,7 @@ const llmPage = (preset: (typeof LLM_PROVIDER_PRESETS)[number]): SettingsVendorP
         ? 'Agent bawaan juga dapat memakai Anthropic API Key. Untuk Claude Code melalui MCP, gunakan panel Agent eksternal.'
         : 'Setiap penyedia menyimpan alamat, API Key, dan model secara terpisah. Uji koneksi lalu pilih model yang tersedia.',
     ...(preset.id === 'anthropic'
-      ? { noteAction: { label: '外部 Agent 接入 (MCP)', action: 'open-mcp-guide' } }
+      ? { noteAction: { label: 'Hubungkan Agent eksternal (MCP)', action: 'open-mcp-guide' } }
       : {}),
     fields: [
       {
@@ -36,15 +36,15 @@ const llmPage = (preset: (typeof LLM_PROVIDER_PRESETS)[number]): SettingsVendorP
       ),
       ...(preset.id === 'openai' ? [{
         name: 'LLM_OPENAI_API_MODE',
-        label: '接口格式',
+        label: 'Format API',
         kind: 'select' as const,
-        defaultLabel: 'Responses API（推荐）',
-        note: '选择服务实际支持的协议；OpenAI 使用 Responses API，兼容服务使用 Chat Completions API。',
+        defaultLabel: 'Responses API (disarankan)',
+        note: 'Pilih protokol yang benar-benar didukung layanan. OpenAI memakai Responses API; layanan kompatibel dapat memakai Chat Completions API.',
         options: [{ value: 'chat', label: 'Chat Completions API' }],
       }] : []),
       {
         name: names.model,
-        label: '模型',
+        label: 'Model',
         kind: 'text',
         defaultLabel: preset.defaultModel,
         discoverableModel: true,
@@ -60,17 +60,17 @@ const CODEX_PAGE: SettingsVendorPage = {
   vendor: 'openai',
   title: 'OpenAI · Codex',
   connection: 'codex',
-  note: '使用 ChatGPT 订阅登录，由官方 Codex CLI 管理凭据、续期与退出。MiniCut 不会读取或显示 OAuth 凭据。',
+  note: 'Masuk memakai langganan ChatGPT. Codex CLI resmi mengelola kredensial, perpanjangan sesi, dan keluar. MiniCut tidak membaca atau menampilkan kredensial OAuth.',
   fields: [
     {
-      name: 'CODEX_MODEL', label: 'Codex 模型', kind: 'text',
-      defaultLabel: 'Codex 默认模型', discoverableModel: true,
-      note: '登录后可读取当前账号可用的模型，也可以手动填写模型 ID。',
+      name: 'CODEX_MODEL', label: 'Model Codex', kind: 'text',
+      defaultLabel: 'Model bawaan Codex', discoverableModel: true,
+      note: 'Setelah masuk, MiniCut dapat membaca model yang tersedia untuk akun ini. ID model juga dapat diisi manual.',
     },
     {
-      name: 'CODEX_REASONING_EFFORT', label: '推理强度', kind: 'select',
-      options: [{ value: '', label: '模型默认' }],
-      note: '读取模型后显示当前模型支持的档位；留空使用该模型的默认值。',
+      name: 'CODEX_REASONING_EFFORT', label: 'Tingkat penalaran', kind: 'select',
+      options: [{ value: '', label: 'Bawaan model' }],
+      note: 'Setelah model dimuat, pilihan tingkat penalaran yang didukung akan tampil. Kosongkan untuk memakai bawaan model.',
     },
   ],
 };
@@ -80,31 +80,31 @@ const COPILOT_PAGE: SettingsVendorPage = {
   vendor: 'copilot',
   title: 'GitHub Copilot',
   connection: 'copilot',
-  note: '使用 GitHub Copilot 订阅：官方 Copilot CLI 管理登录与凭据（终端运行 copilot login），'
-    + 'MiniCut 通过 Copilot SDK 直接驱动编辑工具，不会读取或显示凭据。'
-    + '会话状态隔离在 ~/.openchatcut/copilot，不影响你自己的 ~/.copilot。',
+  note: 'Gunakan langganan GitHub Copilot. Copilot CLI resmi mengelola login dan kredensial (jalankan copilot login di terminal),
+    + ' MiniCut memakai Copilot SDK untuk menjalankan alat edit dan tidak membaca atau menampilkan kredensial.'
+    + ' Status sesi MiniCut disimpan terpisah dan tidak mengganggu konfigurasi Copilot pribadi.',
   fields: [
     {
-      name: 'COPILOT_MODEL', label: 'Copilot 模型', kind: 'text',
-      defaultLabel: 'Copilot 默认模型', discoverableModel: true,
-      note: '登录后可读取当前订阅可用的模型，也可以手动填写模型 ID。仅支持工具调用的模型可用于编辑。',
+      name: 'COPILOT_MODEL', label: 'Model Copilot', kind: 'text',
+      defaultLabel: 'Model bawaan Copilot', discoverableModel: true,
+      note: 'Setelah masuk, model yang tersedia pada langganan dapat dimuat atau ID model dapat diisi manual. Hanya model yang mendukung pemanggilan alat yang dapat mengedit.',
     },
     {
-      name: 'COPILOT_REASONING_EFFORT', label: '推理强度', kind: 'select',
-      options: [{ value: '', label: '模型默认' }],
-      note: '读取模型后显示当前模型支持的档位；留空使用该模型的默认值。',
+      name: 'COPILOT_REASONING_EFFORT', label: 'Tingkat penalaran', kind: 'select',
+      options: [{ value: '', label: 'Bawaan model' }],
+      note: 'Setelah model dimuat, pilihan tingkat penalaran yang didukung akan tampil. Kosongkan untuk memakai bawaan model.',
     },
   ],
 };
 
 const XAI_OAUTH_PAGE: SettingsVendorPage = {
-  key: 'llm/xai-oauth', vendor: 'xai-oauth', title: 'xAI · Grok (订阅登录)',
+  key: 'llm/xai-oauth', vendor: 'xai-oauth', title: 'xAI · Grok (Login langganan)',
   connection: 'xai-oauth',
-  note: '使用 SuperGrok 或 X Premium+ 订阅登录：官方 Grok CLI 管理登录与凭据（终端运行 grok login），MiniCut 导入会话并自动续期，不会读取或显示 OAuth 凭据。',
+  note: 'Masuk memakai langganan SuperGrok atau X Premium+. Grok CLI resmi mengelola login dan kredensial; MiniCut mengimpor sesi dan memperbaruinya tanpa membaca atau menampilkan kredensial OAuth.',
   fields: [{
-    name: 'LLM_XAI_OAUTH_MODEL', label: '模型', kind: 'text', defaultLabel: 'grok-4.6',
+    name: 'LLM_XAI_OAUTH_MODEL', label: 'Model', kind: 'text', defaultLabel: 'grok-4.6',
     discoverableModel: true,
-    note: '测试连接后可直接选择接口返回的模型，也可以手动填写模型 ID。',
+    note: 'Setelah koneksi diuji, pilih model yang tersedia atau masukkan ID model secara manual.',
     options: [{ value: 'grok-4.6', label: 'grok-4.6' }],
   }],
 };
@@ -128,16 +128,16 @@ const AGENT_VENDOR_PAGES: readonly SettingsVendorPage[] = MINI_CUT_PROVIDER_ORDE
 });
 
 const VISION_PAGE: SettingsVendorPage = {
-  key: 'llm/vision', vendor: 'vision', title: '视觉理解', fields: [],
+  key: 'llm/vision', vendor: 'vision', title: 'Pemahaman visual', fields: [],
 };
 
 export const PROXY_PAGE: SettingsVendorPage = {
-  key: 'agent/proxy', vendor: 'proxy', title: '网络代理', kind: 'settings',
+  key: 'agent/proxy', vendor: 'proxy', title: 'Proxy jaringan', kind: 'settings',
   note: '国内网络访问海外模型（Gemini / OpenAI / Anthropic / Mistral 等）失败时，'
-    + '可在此填写本地代理地址（如 http://127.0.0.1:7890）。'
-    + '留空则使用系统环境变量（HTTPS_PROXY / HTTP_PROXY）。'
-    + '生效范围：Agent 模型、AI 生成、模型下载、R2 云同步。',
-  fields: [text('PROXY_URL', '代理地址', '例如 http://127.0.0.1:7890')],
+    + ' masukkan alamat proxy lokal di sini, misalnya http://127.0.0.1:7890.'
+    + ' Jika dikosongkan, MiniCut memakai variabel sistem HTTPS_PROXY / HTTP_PROXY.'
+    + ' Berlaku untuk model Agent, generasi AI, unduhan model, dan sinkronisasi R2.',
+  fields: [text('PROXY_URL', 'Alamat proxy', 'Contoh http://127.0.0.1:7890')],
 };
 
 export const AGENT_VENDOR_PAGES_WITH_VISION: readonly SettingsVendorPage[] = [
