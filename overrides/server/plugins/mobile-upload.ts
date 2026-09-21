@@ -22,13 +22,13 @@ function mobileUploadControlAuthorized(req: IncomingMessage, res: ServerResponse
   if (req.method === 'GET') {
     if (trustedEditorRequest(req, false)) return true;
     req.resume();
-    sendJson(res, 403, { error: 'untrusted editor request' });
+    sendJson(res, 403, { error: 'permintaan editor tidak tepercaya' });
     return false;
   }
   if (req.method === 'POST' || req.method === 'DELETE') {
     if (editorCredentialAuthorized(req, true)) return true;
     req.resume();
-    sendJson(res, 401, { error: 'editor credential required' });
+    sendJson(res, 401, { error: 'kredensial editor diperlukan' });
     return false;
   }
   return true;
@@ -47,21 +47,21 @@ export async function handleMobileUploadControl(
       return;
     }
     const match = /^\/sessions\/([0-9a-f-]+)$/.exec(url.pathname);
-    if (!match) { sendJson(res, 404, { error: 'not found' }); return; }
+    if (!match) { sendJson(res, 404, { error: 'tidak ditemukan' }); return; }
     if (req.method === 'GET') {
       const snapshot = service.getSession(match[1]!);
-      sendJson(res, snapshot ? 200 : 404, snapshot ?? { error: 'session not found or expired' });
+      sendJson(res, snapshot ? 200 : 404, snapshot ?? { error: 'sesi tidak ditemukan atau sudah kedaluwarsa' });
       return;
     }
     if (req.method === 'DELETE') {
       const snapshot = await service.closeSession(match[1]!);
-      sendJson(res, snapshot ? 200 : 404, snapshot ?? { error: 'session not found or expired' });
+      sendJson(res, snapshot ? 200 : 404, snapshot ?? { error: 'sesi tidak ditemukan atau sudah kedaluwarsa' });
       return;
     }
-    sendJson(res, 405, { error: 'method not allowed' });
+    sendJson(res, 405, { error: 'metode tidak diizinkan' });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const status = /no LAN IPv4/i.test(message) ? 503 : 500;
+    const status = /tidak ada alamat IPv4 LAN/i.test(message) ? 503 : 500;
     sendJson(res, status, { error: message });
   }
 }
