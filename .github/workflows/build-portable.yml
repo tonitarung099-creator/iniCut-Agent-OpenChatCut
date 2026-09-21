@@ -53,8 +53,8 @@ jobs:
           if ($builder -notmatch "productName: 'MiniCut'") { throw "Brand MiniCut belum diterapkan" }
 
           $locale = Get-Content upstream/src/i18n/locale.ts -Raw
-          if ($locale -notmatch "export type Locale = 'id'") { throw "Locale Indonesia belum aktif" }
-          if ($locale -match "'zh' \| 'en' \| 'it' \| 'ru'") { throw "Locale lama masih aktif" }
+          if ($locale -notmatch "ALL_LOCALES: readonly Locale\[\] = \['id'\]") { throw "UI belum dikunci ke Bahasa Indonesia" }
+          if ($locale -notmatch "return 'id';") { throw "Locale aktif bukan Bahasa Indonesia" }
 
           $provider = Get-Content upstream/shared/llm-providers.ts -Raw
           if ($provider -notmatch "DEFAULT_LLM_PROVIDER: LlmProvider = 'gemini'") { throw "Gemini belum menjadi provider utama" }
