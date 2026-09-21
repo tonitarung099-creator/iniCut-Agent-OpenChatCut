@@ -167,9 +167,11 @@ export function modelPackDefinition(id: string): ModelPackDefinition | undefined
  * Bilingual because the assistant relays it in the user's language.
  */
 export function modelPackInstallGuidance(packs: readonly { id: string }[]): string {
-  const names = packs.map((pack) => {
-    const def = MODEL_PACKS.find((entry) => entry.id === pack.id);
-    return def ? `${def.label}（${def.id}）` : pack.id;
-  }).join('、');
+  const display: Record<string, string> = {
+    'rhythm-lite': 'Paket analisis ritme ringan',
+    'music-semantics-lite': 'Paket semantik musik ringan',
+    'visual-semantics-lite': 'Paket semantik visual ringan',
+  };
+  const names = packs.map((pack) => display[pack.id] ?? pack.id).join(', ');
   return `Buka Pengaturan → Transkripsi → Model lokal, lalu unduh: ${names} (ID paket: ${packs.map((pack) => pack.id).join(', ')}).`;
 }
