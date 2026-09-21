@@ -1,0 +1,96 @@
+name: Build MiniCut Portable
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-portable.yml"
+      - "patches/**"
+      - "overrides/**"
+      - "README.md"
+      - "NOTICE.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: minicut-portable-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-portable:
+    name: Windows x64 Portable
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Ambil modifikasi MiniCut
+        uses: actions/checkout@v4
+
+      - name: Ambil basis OpenChatCut
+        uses: actions/checkout@v4
+        with:
+          repository: 0xsline/OpenChatCut
+          ref: 07437f60257a578745262359753bfccce337510c
+          path: upstream
+
+      - name: Siapkan Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: upstream/package-lock.json
+
+      - name: Terapkan modifikasi MiniCut
+        run: node patches/apply.mjs upstream
+
+      - name: Validasi target portable dan Bahasa Indonesia
+        shell: pwsh
+        run: |
+          $builder = Get-Content upstream/config/electron-builder.config.mjs -Raw
+          if ($builder -notmatch "target: \['portable'\]") { throw "Target Windows belum portable" }
+          if ($builder -notmatch "productName: 'MiniCut'") { throw "Brand MiniCut belum diterapkan" }
+
+          $locale = Get-Content upstream/src/i18n/locale.ts -Raw
+          if ($locale -notmatch "export type Locale = 'id'") { throw "Locale Indonesia belum aktif" }
+          if ($locale -match "'zh' \| 'en' \| 'it' \| 'ru'") { throw "Locale lama masih aktif" }
+
+          $provider = Get-Content upstream/shared/llm-providers.ts -Raw
+          if ($provider -notmatch "DEFAULT_LLM_PROVIDER: LlmProvider = 'gemini'") { throw "Gemini belum menjadi provider utama" }
+
+      - name: Instal dependensi
+        working-directory: upstream
+        run: npm ci
+
+      - name: Build MiniCut Portable
+        working-directory: upstream
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run desktop:dist:win
+
+      - name: Tampilkan hasil build
+        shell: pwsh
+        run: |
+          Get-ChildItem upstream/release -Recurse | Select-Object FullName, Length
+
+      - name: Unggah MiniCut Portable
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiniCut-Portable-Windows-x64
+          path: |
+            upstream/release/MiniCut-Portable-*.exe
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Unggah source hasil modifikasi
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiniCut-Corresponding-Source
+          path: |
+            upstream/
+            !upstream/node_modules/
+            !upstream/release/
+            !upstream/desktop-dist/
+            !upstream/dist/
+          retention-days: 14
