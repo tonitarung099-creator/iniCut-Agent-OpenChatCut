@@ -1,4 +1,4 @@
-name: Build MiniCut Portable
+name: Build MiniCut Portable Folder
 
 on:
   workflow_dispatch:
@@ -15,12 +15,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: minicut-portable-${{ github.ref }}
+  group: minicut-portable-folder-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   windows-portable:
-    name: Windows x64 Portable
+    name: Windows x64 Portable Folder
     runs-on: windows-latest
     timeout-minutes: 90
 
@@ -45,12 +45,18 @@ jobs:
       - name: Terapkan modifikasi MiniCut
         run: node patches/apply.mjs upstream
 
-      - name: Validasi target portable dan Bahasa Indonesia
+      - name: Validasi portable folder dan Bahasa Indonesia
         shell: pwsh
         run: |
           $builder = Get-Content upstream/config/electron-builder.config.mjs -Raw
-          if ($builder -notmatch "target: \['portable'\]") { throw "Target Windows belum portable" }
           if ($builder -notmatch "productName: 'MiniCut'") { throw "Brand MiniCut belum diterapkan" }
+
+          $pkg = Get-Content upstream/package.json -Raw | ConvertFrom-Json
+          $script = $pkg.scripts.'desktop:dist:win'
+          if ($script -notmatch '--dir') { throw "Build Windows belum memakai electron-builder --dir" }
+          if ($script -match "'--win','portable'" -or $script -match '"--win","portable"') {
+            throw "Build masih memakai single-file portable"
+          }
 
           $locale = Get-Content upstream/src/i18n/locale.ts -Raw
           if ($locale -notmatch "ALL_LOCALES: readonly Locale\[\] = \['id'\]") { throw "UI belum dikunci ke Bahasa Indonesia" }
@@ -83,33 +89,74 @@ jobs:
         working-directory: upstream
         run: node scripts/sync-shader-sources.mjs
 
-      - name: Build MiniCut Portable
+      - name: Build MiniCut sebagai folder portable
         working-directory: upstream
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npm run desktop:dist:win
 
-      - name: Uji jalankan MiniCut Portable
+      - name: Susun folder portable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = 'upstream/release/win-unpacked'
+          if (-not (Test-Path -LiteralPath $source -PathType Container)) {
+            throw "Folder hasil electron-builder tidak ditemukan: $source"
+          }
+
+          $root = 'upstream/release-package'
+          $bundle = Join-Path $root 'MiniCut'
+          Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $bundle -Force | Out-Null
+          Copy-Item -Path (Join-Path $source '*') -Destination $bundle -Recurse -Force
+
+          $exe = Join-Path $bundle 'MiniCut.exe'
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
+            throw "MiniCut.exe tidak ditemukan di folder portable"
+          }
+
+          $data = Join-Path $bundle 'data'
+          New-Item -ItemType Directory -Path $data -Force | Out-Null
+          @'
+          Folder ini dipakai MiniCut untuk data portable.
+          Jangan hapus folder data jika ingin mempertahankan pengaturan dan proyek lokal.
+          Untuk memindahkan MiniCut ke komputer/folder lain, salin seluruh folder MiniCut.
+          '@ | Set-Content -LiteralPath (Join-Path $data 'BACA_SAYA.txt') -Encoding UTF8
+
+          @'
+          MINICUT PORTABLE FOLDER
+
+          Cara menjalankan:
+          1. Ekstrak ZIP sampai selesai.
+          2. Buka folder MiniCut.
+          3. Jalankan MiniCut.exe.
+          4. Tidak perlu installer dan tidak perlu memindahkan file ke Program Files.
+
+          Penting:
+          - Jangan menjalankan MiniCut.exe langsung dari dalam ZIP.
+          - Jangan memisahkan MiniCut.exe dari folder resources, locales, dan file pendukung lain.
+          - Saat memindahkan aplikasi, pindahkan seluruh folder MiniCut.
+          '@ | Set-Content -LiteralPath (Join-Path $bundle 'BACA_SAYA.txt') -Encoding UTF8
+
+          Write-Host "Folder portable siap: $bundle"
+          Get-ChildItem -LiteralPath $bundle | Select-Object Name, Length, Mode
+
+      - name: Uji jalankan folder portable MiniCut
         shell: pwsh
         env:
           CC_SMOKE: "1"
           CC_SMOKE_RENDER: "1"
         run: |
           $ErrorActionPreference = 'Stop'
-          $built = @(Get-ChildItem -LiteralPath upstream/release -Filter 'MiniCut-Portable-*.exe' -File)
-          if ($built.Count -ne 1) {
-            throw "Harus ada tepat satu MiniCut Portable EXE, ditemukan $($built.Count)"
-          }
+          $bundle = (Resolve-Path 'upstream/release-package/MiniCut').Path
+          $portableExe = Join-Path $bundle 'MiniCut.exe'
+          $stdout = Join-Path $env:RUNNER_TEMP 'minicut-smoke-stdout.log'
+          $stderr = Join-Path $env:RUNNER_TEMP 'minicut-smoke-stderr.log'
 
-          $portableDir = Join-Path $env:RUNNER_TEMP "minicut-portable-smoke-$PID"
-          Remove-Item -LiteralPath $portableDir -Recurse -Force -ErrorAction SilentlyContinue
-          New-Item -ItemType Directory -Path $portableDir | Out-Null
-          $portableExe = Join-Path $portableDir 'MiniCut.exe'
-          Copy-Item -LiteralPath $built[0].FullName -Destination $portableExe
+          Remove-Item -LiteralPath $stdout -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath $stderr -Force -ErrorAction SilentlyContinue
 
-          $stdout = Join-Path $portableDir 'smoke-stdout.log'
-          $stderr = Join-Path $portableDir 'smoke-stderr.log'
-          $process = Start-Process -FilePath $portableExe -PassThru `
+          $process = Start-Process -FilePath $portableExe -WorkingDirectory $bundle -PassThru `
             -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           $null = $process.Handle
           $finished = $process.WaitForExit(420000)
@@ -131,25 +178,45 @@ jobs:
             throw "MiniCut Portable gagal smoke test dengan exit code $($process.ExitCode)"
           }
 
-          $portableData = Join-Path $portableDir 'data'
-          if (-not (Test-Path -LiteralPath $portableData -PathType Container)) {
-            throw "Folder data portable tidak dibuat di samping MiniCut.exe"
+          foreach ($required in @('data', 'data/runtime', 'data/electron', 'resources')) {
+            $path = Join-Path $bundle $required
+            if (-not (Test-Path -LiteralPath $path)) {
+              throw "Struktur portable tidak lengkap: $required"
+            }
           }
 
-          Write-Host "MiniCut Portable berhasil dijalankan dan memakai data lokal: $portableData"
-      - name: Tampilkan hasil build
+          Write-Host 'MiniCut Portable Folder berhasil dijalankan.'
+
+      - name: Bersihkan data hasil smoke test
         shell: pwsh
         run: |
-          Get-ChildItem upstream/release -Recurse | Select-Object FullName, Length
+          $data = 'upstream/release-package/MiniCut/data'
+          Remove-Item -LiteralPath $data -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $data -Force | Out-Null
+          @'
+          Folder data portable MiniCut.
+          Pengaturan dan data runtime akan dibuat di sini saat aplikasi dijalankan.
+          '@ | Set-Content -LiteralPath (Join-Path $data 'BACA_SAYA.txt') -Encoding UTF8
 
-      - name: Unggah MiniCut Portable
+      - name: Tampilkan hasil portable folder
+        shell: pwsh
+        run: |
+          $bundle = 'upstream/release-package/MiniCut'
+          $files = @(Get-ChildItem -LiteralPath $bundle -Recurse -File)
+          $bytes = ($files | Measure-Object -Property Length -Sum).Sum
+          Write-Host "Jumlah file: $($files.Count)"
+          Write-Host ("Ukuran folder: {0:N2} MB" -f ($bytes / 1MB))
+          Get-ChildItem -LiteralPath $bundle | Select-Object Name, Length, Mode
+
+      - name: Unggah MiniCut Portable Folder
         uses: actions/upload-artifact@v4
         with:
           name: MiniCut-Portable-Windows-x64
           path: |
-            upstream/release/MiniCut-Portable-*.exe
+            upstream/release-package/
           if-no-files-found: error
           retention-days: 14
+          compression-level: 6
 
       - name: Unggah source hasil modifikasi
         uses: actions/upload-artifact@v4
@@ -159,6 +226,7 @@ jobs:
             upstream/
             !upstream/node_modules/
             !upstream/release/
+            !upstream/release-package/
             !upstream/desktop-dist/
             !upstream/dist/
           retention-days: 14
