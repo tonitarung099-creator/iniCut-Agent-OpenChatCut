@@ -73,6 +73,10 @@ jobs:
         working-directory: upstream
         run: npx tsx shared/gemini-key-pool.verify.ts
 
+      - name: Uji Agent hanya Gemini
+        working-directory: upstream
+        run: npx tsx src/agent/gemini-only.verify.ts
+
       - name: Uji pemahaman waktu Bahasa Indonesia
         working-directory: upstream
         run: npx tsx shared/indonesian-time.verify.ts
