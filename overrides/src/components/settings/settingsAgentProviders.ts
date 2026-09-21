@@ -109,7 +109,7 @@ const XAI_OAUTH_PAGE: SettingsVendorPage = {
   }],
 };
 
-// Sponsored placement: OFox sits 4th in Agent 大脑 (Anthropic, OpenAI,
+// Penempatan OFox mengikuti urutan penyedia Agent upstream (Anthropic, OpenAI,
 // OpenAI · Codex, OFox), independent of its position in LLM_PROVIDER_PRESETS.
 const OFOX_PRESET = LLM_PROVIDER_PRESETS.find((preset) => preset.id === 'ofox');
 const MINI_CUT_PROVIDER_ORDER = [
@@ -133,7 +133,7 @@ const VISION_PAGE: SettingsVendorPage = {
 
 export const PROXY_PAGE: SettingsVendorPage = {
   key: 'agent/proxy', vendor: 'proxy', title: 'Proxy jaringan', kind: 'settings',
-  note: '国内网络访问海外模型（Gemini / OpenAI / Anthropic / Mistral 等）失败时，'
+  note: 'Jika akses ke Gemini, OpenAI, Anthropic, Mistral, atau layanan lain memerlukan proxy,'
     + ' masukkan alamat proxy lokal di sini, misalnya http://127.0.0.1:7890.'
     + ' Jika dikosongkan, MiniCut memakai variabel sistem HTTPS_PROXY / HTTP_PROXY.'
     + ' Berlaku untuk model Agent, generasi AI, unduhan model, dan sinkronisasi R2.',
