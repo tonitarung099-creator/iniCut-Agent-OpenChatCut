@@ -9,7 +9,7 @@ import { EN } from './dict/en';
 import EN_DATA from './dict/en/templates-data';
 import { indonesianUiText } from '../../shared/indonesian-ui';
 
-export type Locale = 'id';
+export type Locale = 'id' | 'zh' | 'en' | 'it' | 'ru';
 
 export const ALL_LOCALES: readonly Locale[] = ['id'];
 
