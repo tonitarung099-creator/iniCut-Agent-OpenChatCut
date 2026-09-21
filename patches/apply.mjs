@@ -46,10 +46,14 @@ copyOverrides();
   const win = pkg.scripts?.['desktop:dist:win'];
   if (typeof win !== 'string') throw new Error('desktop:dist:win script not found');
   pkg.scripts['desktop:dist:win'] = win
-    .replace("'--win','nsis'", "'--win','portable'")
-    .replace('"--win","nsis"', '"--win","portable"');
+    .replace("'--win','nsis'", "'--win','--dir'")
+    .replace('"--win","nsis"', '"--win","--dir"');
   if (pkg.scripts['desktop:dist:win'] === win) {
-    throw new Error('Could not switch Windows desktop target from nsis to portable');
+    throw new Error('Could not switch Windows desktop build from installer to unpacked portable folder');
+  }
+  if (!pkg.scripts['desktop:dist:win'].includes("'--dir'")
+      && !pkg.scripts['desktop:dist:win'].includes('"--dir"')) {
+    throw new Error('Windows desktop build is not configured for --dir portable-folder output');
   }
   write(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 }
@@ -79,11 +83,9 @@ replaceRequired(
   "repo: 'OpenChatCut',",
   "repo: 'iniCut-Agent-OpenChatCut',",
 );
-replaceRequired(
-  'config/electron-builder.config.mjs',
-  "target: ['nsis'],",
-  "target: ['portable'],",
-);
+// MiniCut Windows distribution is built with electron-builder --dir. The
+// upstream win.target remains untouched because --dir bypasses installer
+// targets entirely and emits an unpacked application directory.
 
 // ---- Portable storage ------------------------------------------------------
 // Set portable paths in bootstrap BEFORE app-main and server modules load.
@@ -126,11 +128,11 @@ app.setPath('cache', electronCache);
   write(rel, s);
 }
 
-// Portable packages should not try to run an installer-style self updater.
+// Portable-folder builds should not try to run an installer-style self updater.
 replaceRequired(
   'desktop/update-service.ts',
   "  return context.platform === 'win32' || context.platform === 'linux';",
-  "  return false; // MiniCut portable: update by replacing the portable build.",
+  "  return false; // MiniCut portable folder: update by replacing the app folder.",
 );
 
 // ---- Indonesian desktop dialogs ------------------------------------------
