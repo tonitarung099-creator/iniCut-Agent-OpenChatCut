@@ -2,7 +2,6 @@ import type { IncomingMessage } from 'node:http';
 import type { Plugin } from 'vite';
 import { getKey, type KeyName } from '../keystore.ts';
 import {
-  requireLlmProvider,
   llmProviderPreset,
   protocolForProvider,
   type LlmProvider,
@@ -16,9 +15,10 @@ function keyReader(name: string): string {
   return getKey(name as KeyName);
 }
 
-export function llmProviderForRequest(req?: IncomingMessage): LlmProvider {
-  const requested = req?.headers['x-openchatcut-provider'];
-  return requireLlmProvider(requested === undefined ? getKey('LLM_PROVIDER') : requested);
+export function llmProviderForRequest(_req?: IncomingMessage): LlmProvider {
+  // MiniCut Agent is Gemini-only. Ignore provider headers and stale settings
+  // from older builds so every /llm request is routed to Gemini.
+  return 'gemini';
 }
 
 export function llmTarget(req?: IncomingMessage): string {
@@ -76,7 +76,7 @@ export function llmProxyPlugin(): Plugin {
           llmProviderForRequest(req);
         } catch {
           res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: { message: 'Unsupported LLM provider' } }));
+          res.end(JSON.stringify({ error: { message: 'MiniCut hanya mendukung Google Gemini untuk Agent' } }));
           return;
         }
         next();
