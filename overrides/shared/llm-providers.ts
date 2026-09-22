@@ -32,7 +32,7 @@ export const LLM_PROVIDER_PRESETS = [
     label: 'Google · Gemini',
     protocol: 'google',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    defaultModel: 'gemini-3.5-flash',
+    defaultModel: 'gemini-3.8-flash',
   },
   {
     id: 'kimi',
@@ -153,7 +153,7 @@ export const LLM_PROVIDER_PRESETS = [
 
 export type LlmProvider = (typeof LLM_PROVIDER_PRESETS)[number]['id'];
 
-export const DEFAULT_LLM_PROVIDER: LlmProvider = 'anthropic';
+export const DEFAULT_LLM_PROVIDER: LlmProvider = 'gemini';
 
 export interface LlmProviderConfigNames {
   readonly apiKey: string;
