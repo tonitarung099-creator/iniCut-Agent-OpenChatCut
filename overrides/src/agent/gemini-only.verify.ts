@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { AGENT_VENDOR_PAGES_WITH_VISION } from '../components/settings/settingsAgentProviders';
+import { SETTINGS_CATEGORIES } from '../components/settings/settingsSchema';
 import { parseGeminiApiKeys } from '../../shared/gemini-key-pool';
 
 assert.equal(AGENT_VENDOR_PAGES_WITH_VISION.length, 1, 'MiniCut must expose exactly one Agent provider');
@@ -34,7 +35,30 @@ assert.match(proxy, /return 'gemini';/);
 
 const settingsPane = readFileSync('src/components/settings/settingsVendorPane.tsx', 'utf8');
 assert.match(settingsPane, /LLM_GEMINI_API_KEY/);
-assert.match(settingsPane, /satu key per baris/);
-assert.match(settingsPane, /rows=\{6\}/);
+assert.match(settingsPane, /GeminiKeyManager/);
+assert.match(settingsPane, /\/api\/keys\/gemini-pool\/add/);
+assert.match(settingsPane, /Tambah \{count\} Key/);
+assert.match(settingsPane, /Hapus Semua/);
+
+const settingsVendors = SETTINGS_CATEGORIES
+  .flatMap((category) => category.groups)
+  .flatMap((group) => group.vendors)
+  .map((page) => page.vendor);
+for (const removedAi of [
+  'anthropic', 'openai', 'xai', 'kimi', 'qwen', 'glm', 'deepseek',
+  'stepfun', 'byteplus', 'minimax', 'xiaomi', 'mistral', 'openrouter',
+  'ofox', 'orcarouter', 'ollama', 'lmstudio',
+]) {
+  assert.equal(
+    settingsVendors.includes(removedAi as never),
+    false,
+    `non-Gemini AI provider must not appear in MiniCut settings: ${removedAi}`,
+  );
+}
+assert.equal(
+  SETTINGS_CATEGORIES.some((category) => category.key === 'generation'),
+  false,
+  'the multi-provider AI generation category must be removed from MiniCut settings',
+);
 
 console.log('MiniCut Gemini-only Agent checks passed');
