@@ -677,12 +677,12 @@ replaceRequired(
   // generation helpers. Remove them rather than leaving dead imports that fail
   // TypeScript's noUnusedLocals release build.
   source = source
-    .replace("import type { VendorId } from './vendorIcons';\n", '')
-    .replace('  modelPicker,\n', '')
-    .replace('  modelText,\n', '')
-    .replace('  routeSelect,\n', '')
-    .replace('  TRANSCRIPTION_SETTINGS_GROUP,\n', '')
-    .replace('  VOICE_SETTINGS_GROUP,\n', '');
+    .replace(/import type \{ VendorId \} from '\.\/vendorIcons';\r?\n/, '')
+    .replace(/  modelPicker,\r?\n/, '')
+    .replace(/  modelText,\r?\n/, '')
+    .replace(/  routeSelect,\r?\n/, '')
+    .replace(/  TRANSCRIPTION_SETTINGS_GROUP,\r?\n/, '')
+    .replace(/  VOICE_SETTINGS_GROUP,\r?\n/, '');
   const providerHelpersStart = source.indexOf("const MINIMAX_NOTE =");
   const categoriesStart = source.indexOf('export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [');
   if (providerHelpersStart >= 0 && categoriesStart > providerHelpersStart) {
