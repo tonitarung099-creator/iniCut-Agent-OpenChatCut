@@ -25,6 +25,7 @@ const GEMINI_PAGE: SettingsVendorPage = {
       note: 'MiniCut memakai Gemini 3.8 Flash sebagai bawaan. Klik Uji & muat model untuk melihat model yang benar-benar tersedia untuk API Key/proyek Google kamu.',
       options: [
         { value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash · gratis tersedia' },
+        { value: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash · gratis tersedia' },
         { value: 'gemini-3.6-flash', label: 'Gemini 3.6 Flash · gratis tersedia' },
         { value: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash · gratis tersedia' },
         { value: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash-Lite · gratis tersedia' },
