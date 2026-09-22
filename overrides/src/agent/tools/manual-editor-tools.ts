@@ -83,6 +83,31 @@ export async function execManualEditorTool(
     return { ok: true, action, hidden: args.hidden };
   }
 
+  if (action === 'toggle_transcript_word' || action === 'delete_transcript_words') {
+    const item = uniqueItem(state.items, args.itemId);
+    if (!item) return { error: `Klip tidak ditemukan atau prefix tidak unik: ${String(args.itemId ?? '')}` };
+
+    if (action === 'toggle_transcript_word') {
+      if (!Number.isInteger(args.wordIndex) || Number(args.wordIndex) < 0) {
+        return { error: 'wordIndex integer >= 0 wajib diisi.' };
+      }
+      const wordIndex = Number(args.wordIndex);
+      ctx.commands.toggleWord(item.id, wordIndex);
+      return { ok: true, action, itemId: item.id, wordIndex };
+    }
+
+    if (!Array.isArray(args.wordIndexes) || args.wordIndexes.length === 0) {
+      return { error: 'wordIndexes wajib berisi setidaknya satu index.' };
+    }
+    const wordIndexes = [...new Set(args.wordIndexes.map(Number))]
+      .filter((value) => Number.isInteger(value) && value >= 0);
+    if (wordIndexes.length !== args.wordIndexes.length) {
+      return { error: 'Semua wordIndexes harus integer >= 0 tanpa nilai tidak valid.' };
+    }
+    ctx.commands.deleteWords(item.id, wordIndexes);
+    return { ok: true, action, itemId: item.id, wordIndexes };
+  }
+
   if (
     action === 'set_reframe_keyframe'
     || action === 'remove_reframe_keyframe'
