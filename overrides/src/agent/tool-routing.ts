@@ -33,9 +33,14 @@ const ROUTING_GROUPS: readonly RoutingGroup[] = [
     requestKeywords: [
       'trim', 'split', 'move clip', 'delete clip', 'remove clip', 'retime', 'slip edit',
       'background fill', 'blur background', 'edit timeline',
+      'manual edit', 'edit manual', 'manual editing', 'like manual',
       'potong', 'potong video', 'potong klip', 'pangkas', 'pecah', 'pecah klip', 'bagi klip',
       'hapus klip', 'buang klip', 'pindah klip', 'geser klip', 'ubah klip',
       'edit linimasa', 'edit timeline', 'rapikan timeline',
+      'edit manual', 'seperti manual', 'kayak manual', 'ngedit manual',
+      'pilih klip', 'pilih semua klip', 'sembunyikan trek', 'tampilkan trek',
+      'bisukan trek', 'bunyikan trek', 'kunci trek', 'buka kunci trek',
+      'sembunyikan subtitle', 'tampilkan subtitle', 'reframe manual',
       '剪辑', '裁剪', '分割', '移动片段', '删除片段', '移除片段', '变速', '滑动编辑',
       '背景填充', '模糊背景', '虚化背景',
     ],
@@ -43,7 +48,7 @@ const ROUTING_GROUPS: readonly RoutingGroup[] = [
     tools: [
       'update_item_props', 'move_item', 'set_item_timing', 'duplicate_item', 'remove_item',
       'split_item', 'manage_timelines', 'edit_track', 'edit_item', 'undo_last_change',
-      'redo_last_change', 'apply_layout',
+      'redo_last_change', 'apply_layout', 'manual_editor_action',
     ],
   },
   {
