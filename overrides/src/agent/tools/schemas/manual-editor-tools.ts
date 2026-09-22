@@ -11,7 +11,8 @@ export const MANUAL_EDITOR_TOOL_SCHEMAS: AgentToolSchema[] = [{
     'Bridge for exact manual-editor actions that are otherwise UI-only or too low-level for the domain tools.',
     'Use dedicated tools first for normal clip edits.',
     'Supported actions: select_item, select_items, select_all, clear_selection, set_track_flag,',
-    'set_captions_hidden, set_reframe_keyframe, remove_reframe_keyframe, clear_reframe_keyframes.',
+    'set_captions_hidden, set_reframe_keyframe, remove_reframe_keyframe, clear_reframe_keyframes,',
+    'toggle_transcript_word, delete_transcript_words.',
     'This tool operates only on MiniCut EditorCore commands; it cannot execute arbitrary OS or shell actions.',
   ].join(' '),
   input_schema: {
