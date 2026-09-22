@@ -201,4 +201,34 @@ replaceRequired(
   }
 }
 
+
+// ---- Manual editor parity for Gemini --------------------------------------
+{
+  const rel = 'src/agent/tools.ts';
+  let source = read(rel);
+
+  const importAnchor = "import {\n  AGENT_RUNTIME_TOOL_NAMES,\n  AGENT_RUNTIME_TOOL_SCHEMAS,\n} from './tools/schemas/agent-runtime-tools';";
+  if (!source.includes(importAnchor)) throw new Error('src/agent/tools.ts manual-parity import anchor not found');
+  source = source.replace(
+    importAnchor,
+    importAnchor + "\nimport { MANUAL_EDITOR_TOOL_NAMES, MANUAL_EDITOR_TOOL_SCHEMAS } from './tools/schemas/manual-editor-tools';",
+  );
+
+  const schemaAnchor = "export const TOOL_SCHEMAS: AgentToolSchema[] = [\n  ...CORE_TOOL_SCHEMAS,";
+  if (!source.includes(schemaAnchor)) throw new Error('src/agent/tools.ts manual-parity schema anchor not found');
+  source = source.replace(
+    schemaAnchor,
+    schemaAnchor + "\n  ...MANUAL_EDITOR_TOOL_SCHEMAS,",
+  );
+
+  const executorAnchor = "  [AGENT_RUNTIME_TOOL_NAMES, async () => (\n    await import('./tools/agent-runtime-tools')\n  ).execAgentRuntimeTool],";
+  if (!source.includes(executorAnchor)) throw new Error('src/agent/tools.ts manual-parity executor anchor not found');
+  source = source.replace(
+    executorAnchor,
+    executorAnchor + "\n  [MANUAL_EDITOR_TOOL_NAMES, async () => (\n    await import('./tools/manual-editor-tools')\n  ).execManualEditorTool],",
+  );
+
+  write(rel, source);
+}
+
 console.log('MiniCut overlay applied successfully.');
