@@ -417,6 +417,9 @@ interface GeminiPoolEntry {
 interface GeminiPoolStatus {
   count: number;
   entries: GeminiPoolEntry[];
+  added?: number;
+  duplicates?: number;
+  overflow?: number;
 }
 
 function GeminiKeyManager({ refreshStatus }: { refreshStatus: () => Promise<void> }) {
@@ -439,7 +442,10 @@ function GeminiKeyManager({ refreshStatus }: { refreshStatus: () => Promise<void
     });
   }, []);
 
-  const mutate = async (path: string, body: Record<string, unknown>): Promise<boolean> => {
+  const mutate = async (
+    path: string,
+    body: Record<string, unknown>,
+  ): Promise<GeminiPoolStatus | null> => {
     setBusy(true);
     setMessage(null);
     try {
@@ -459,10 +465,10 @@ function GeminiKeyManager({ refreshStatus }: { refreshStatus: () => Promise<void
       } catch {
         setMessage(t('API Key sudah diperbarui, tetapi status tampilan belum dapat dimuat ulang.'));
       }
-      return true;
+      return next;
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : String(reason));
-      return false;
+      return null;
     } finally {
       setBusy(false);
     }
@@ -474,8 +480,24 @@ function GeminiKeyManager({ refreshStatus }: { refreshStatus: () => Promise<void
       setMessage(t('Tempel minimal satu API Key Gemini.'));
       return;
     }
-    const ok = await mutate('/api/keys/gemini-pool/add', { keys });
-    if (ok) setDraft('');
+    const next = await mutate('/api/keys/gemini-pool/add', { keys });
+    if (!next) return;
+
+    if ((next.overflow ?? 0) > 0) {
+      setMessage(t(
+        '{added} key ditambahkan. {overflow} key belum ditambahkan karena pool sudah penuh (maksimal 100). Daftar tempelan dipertahankan agar tidak hilang.',
+        { added: next.added ?? 0, overflow: next.overflow ?? 0 },
+      ));
+      return;
+    }
+
+    setDraft('');
+    if ((next.duplicates ?? 0) > 0) {
+      setMessage(t(
+        '{added} key ditambahkan; {duplicates} key duplikat dilewati.',
+        { added: next.added ?? 0, duplicates: next.duplicates ?? 0 },
+      ));
+    }
   };
 
   const remove = async (index: number): Promise<void> => {
