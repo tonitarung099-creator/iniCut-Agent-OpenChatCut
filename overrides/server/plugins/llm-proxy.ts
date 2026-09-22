@@ -9,7 +9,7 @@ import {
 import { resolveLlmProviderConfig } from '../llm-config.ts';
 import { xaiOauthAccessToken } from '../xai-oauth-session.ts';
 import { proxyMiddleware } from '../proxy.ts';
-import { nextGeminiApiKey } from '../../shared/gemini-key-pool.ts';
+import { geminiApiKeyCount, nextGeminiApiKey } from '../../shared/gemini-key-pool.ts';
 
 function keyReader(name: string): string {
   return getKey(name as KeyName);
@@ -86,6 +86,14 @@ export function llmProxyPlugin(): Plugin {
         headers: llmHeaders,
         forceJsonContentType: true,
         errorMessage: llmErrorMessage,
+        // Gemini API keys can belong to different free-tier projects. If one
+        // key is invalid, blocked, or rate-limited, replay the exact same JSON
+        // request with the next key instead of failing the user's edit.
+        retryAttempts: (req) => {
+          const config = resolveLlmProviderConfig(llmProviderForRequest(req), keyReader);
+          return Math.max(1, geminiApiKeyCount(config.apiKey));
+        },
+        retryStatuses: [401, 403, 429],
       }));
     },
   };
