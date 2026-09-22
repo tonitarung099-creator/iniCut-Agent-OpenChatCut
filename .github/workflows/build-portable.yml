@@ -106,6 +106,10 @@ jobs:
         working-directory: upstream
         run: npx tsx src/agent/manual-editor-parity.verify.ts
 
+      - name: Uji aksi editor manual Gemini
+        working-directory: upstream
+        run: npx tsx src/agent/manual-editor-action.verify.ts
+
       - name: Audit teks Agent dari tulisan Cina
         working-directory: upstream
         run: npx tsx src/agent/tool-runtime-cjk.verify.ts
