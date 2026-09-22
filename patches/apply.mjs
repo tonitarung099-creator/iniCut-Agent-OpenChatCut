@@ -672,6 +672,23 @@ replaceRequired(
 ];`;
 
   source = source.slice(0, start) + replacement + source.slice(end + 2);
+
+  // The Gemini-only settings tree no longer uses upstream multi-provider
+  // generation helpers. Remove them rather than leaving dead imports that fail
+  // TypeScript's noUnusedLocals release build.
+  source = source
+    .replace("import type { VendorId } from './vendorIcons';\n", '')
+    .replace('  modelPicker,\n', '')
+    .replace('  modelText,\n', '')
+    .replace('  routeSelect,\n', '')
+    .replace('  TRANSCRIPTION_SETTINGS_GROUP,\n', '')
+    .replace('  VOICE_SETTINGS_GROUP,\n', '');
+  const providerHelpersStart = source.indexOf("const MINIMAX_NOTE =");
+  const categoriesStart = source.indexOf('export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [');
+  if (providerHelpersStart >= 0 && categoriesStart > providerHelpersStart) {
+    source = source.slice(0, providerHelpersStart) + source.slice(categoriesStart);
+  }
+
   write(rel, source);
 }
 
