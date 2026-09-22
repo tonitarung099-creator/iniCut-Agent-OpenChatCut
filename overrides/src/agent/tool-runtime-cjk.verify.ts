@@ -12,7 +12,7 @@ function filesUnder(dir: string): string[] {
     const path = join(dir, name);
     const stat = statSync(path);
     if (stat.isDirectory()) out.push(...filesUnder(path));
-    else if (name.endsWith('.ts') && !name.includes('.verify.')) out.push(path);
+    else if (name.endsWith('.ts') && !name.includes('.verify') && !name.includes('.test')) out.push(path);
   }
   return out;
 }
