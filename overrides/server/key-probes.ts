@@ -44,16 +44,16 @@ export function probeUrlError(url: RequestInfo | URL): string | null {
   try {
     parsed = new URL(String(url));
   } catch {
-    return '探测地址不是合法 URL';
+    return 'Alamat pengujian bukan URL yang valid';
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return `探测地址协议不支持:${parsed.protocol}`;
+    return `Protokol alamat pengujian tidak didukung: ${parsed.protocol}`;
   }
-  if (parsed.username || parsed.password) return '探测地址不允许携带内嵌凭据';
+  if (parsed.username || parsed.password) return 'Alamat pengujian tidak boleh memuat kredensial di dalam URL';
   const host = parsed.hostname.replace(/^\[|\]$/g, '').toLowerCase();
   if (/^169\.254\.\d{1,3}\.\d{1,3}$/.test(host) || host.startsWith('fe80:')
     || host === 'metadata.google.internal') {
-    return '探测地址指向云元数据/链路本地网段,已拒绝';
+    return 'Alamat pengujian mengarah ke metadata cloud atau jaringan link-local dan ditolak';
   }
   return null;
 }
@@ -174,7 +174,7 @@ export function minimaxPostCheck(bodyText: string): string | null {
     const code = body.base_resp?.status_code ?? 0;
     if (code === 0) return null;
     const msg = body.base_resp?.status_msg ?? '';
-    const hint = code === 1004 ? '（鉴权失败，检查 Key）' : '';
+    const hint = code === 1004 ? ' (autentikasi gagal, periksa API Key)' : '';
     return `MiniMax base_resp ${code}${msg ? ` · ${sanitize(msg)}` : ''}${hint}`;
   } catch {
     return null; // Non-JSON 2xx are counted as successful
@@ -331,7 +331,7 @@ export const PROBES: Record<string, ProbeDef> = {
       },
       body: JSON.stringify({
         user: { uid: 'openchatcut-probe' },
-        req_params: { text: '测', speaker: 'zh_female_vv_uranus_bigtts', audio_params: { format: 'mp3', sample_rate: 24_000 } },
+        req_params: { text: 'tes', speaker: 'zh_female_vv_uranus_bigtts', audio_params: { format: 'mp3', sample_rate: 24_000 } },
       }),
     }),
   },
@@ -354,7 +354,7 @@ export const PROBES: Record<string, ProbeDef> = {
     run: (get) => fetch(`${base(get, 'SPEECHIFY_TTS_BASE_URL', 'https://api.sws.speechify.com')}/v1/audio/speech`, {
       method: 'POST', signal: t(),
       headers: { 'Content-Type': 'application/json', ...bearer(get('SPEECHIFY_TTS_API_KEY')) },
-      body: JSON.stringify({ input: '测', voice_id: 'george', audio_format: 'mp3', model: get('SPEECHIFY_TTS_MODEL') || 'simba-multilingual' }),
+      body: JSON.stringify({ input: 'tes', voice_id: 'george', audio_format: 'mp3', model: get('SPEECHIFY_TTS_MODEL') || 'simba-multilingual' }),
     }),
   },
   'video/seedance': {
@@ -486,10 +486,10 @@ export async function runProbe(page: string, overrides: Record<string, unknown>)
   // writability check reads the panel's raw value directly.
   if (page === 'storage/projects') return runDataDirProbe(overrides);
   const probe = PROBES[page];
-  if (!probe) return { ok: false, message: '该厂商暂不支持连接测试' };
+  if (!probe) return { ok: false, message: 'Penyedia ini belum mendukung uji koneksi' };
   const get = makeGetter(overrides);
   const ready = probe.needs.some((group) => group.every((n) => get(n).length > 0));
-  if (!ready) return { ok: false, message: '尚未填写 API Key · 填好后再点测试' };
+  if (!ready) return { ok: false, message: 'API Key belum diisi · tambahkan key lalu uji lagi' };
   const started = Date.now();
   try {
     const response = await probe.run(get);
@@ -500,9 +500,9 @@ export async function runProbe(page: string, overrides: Record<string, unknown>)
       if (vendorError) return { ok: false, status: response.status, latencyMs, message: vendorError };
       const models = probe.models?.(bodyText);
       const modelText = models
-        ? models.length > 0 ? ` · 已读取 ${models.length} 个模型` : ' · 接口未返回模型列表'
+        ? models.length > 0 ? ` · ${models.length} model berhasil dibaca` : ' · API tidak mengembalikan daftar model'
         : '';
-      const okText = probe.okText?.(bodyText) ?? '连接成功 · 鉴权通过';
+      const okText = probe.okText?.(bodyText) ?? 'Koneksi berhasil · autentikasi valid';
       return {
         ok: true,
         status: response.status,
