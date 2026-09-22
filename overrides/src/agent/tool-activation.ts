@@ -21,6 +21,8 @@ const BOOT_TOOL_NAMES: Record<string, true> = {
 const READ_ONLY_TERMS = [
   '不要修改', '不要编辑', '只读',
   'read only', 'read-only', 'do not edit', "don't edit", 'without editing',
+  'jangan edit', 'jangan mengedit', 'jangan ubah', 'jangan mengubah',
+  'hanya baca', 'cuma baca', 'sekadar baca', 'tanpa mengedit', 'tanpa mengubah',
 ];
 
 /** A natural-language hint may narrow initial routing, but never becomes tool authority. */
@@ -147,10 +149,12 @@ export class ToolActivation {
   ) {
     this.catalog = catalog;
     this.byName = new Map(catalog.map((schema) => [schema.name, schema]));
+    const request = latestUserText(messages);
+    const readOnly = isReadOnlyRoutingHint(request);
     const routed = routedNames(catalog, messages);
     const searchAllowed = allowSearch;
     const requested = [
-      ...bootNames(),
+      ...bootNames().filter((name) => name !== 'manual_editor_action' || !readOnly),
       ...activatedToolNamesFromMessages(messages),
       ...routed.names,
       ...activeNames,
