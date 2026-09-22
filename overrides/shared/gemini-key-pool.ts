@@ -25,12 +25,19 @@ export function firstGeminiApiKey(raw: string): string {
   return parseGeminiApiKeys(raw, 1)[0] ?? '';
 }
 
-export function nextGeminiApiKey(raw: string): string {
+export function geminiApiKeySequence(raw: string): string[] {
   const keys = parseGeminiApiKeys(raw);
-  if (keys.length === 0) return '';
-  const index = cursor % keys.length;
+  if (keys.length === 0) return [];
+  const start = cursor % keys.length;
+  // Advance once per logical request, not once per retry. A caller can then
+  // walk the returned sequence without concurrent requests stealing its next
+  // failover key.
   cursor = (cursor + 1) % Number.MAX_SAFE_INTEGER;
-  return keys[index]!;
+  return [...keys.slice(start), ...keys.slice(0, start)];
+}
+
+export function nextGeminiApiKey(raw: string): string {
+  return geminiApiKeySequence(raw)[0] ?? '';
 }
 
 export function geminiApiKeyCount(raw: string): number {
