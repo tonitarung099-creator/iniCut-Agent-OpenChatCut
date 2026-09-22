@@ -391,4 +391,127 @@ replaceRequired(
   }
 }
 
+// ---- More Indonesian Agent runtime messages -------------------------------
+{
+  const patches = new Map([
+    ["src/agent/tools/captions-actions.ts", new Map([
+      ["layout 移动整块字幕,参数例:{\"preset\":\"bottom-center\"}(3×3 锚点/top/bottom/center)或 {\"offsetXRatio\":0.1,\"offsetYRatio\":-0.05} 微调;要把多条字幕分开摆(如英文上/中文下)用 action=positions,不是 layout", "layout memindahkan seluruh blok subtitel. Contoh: {\"preset\":\"bottom-center\"} untuk anchor 3×3 atau {\"offsetXRatio\":0.1,\"offsetYRatio\":-0.05} untuk penyesuaian halus. Untuk memisahkan beberapa subtitel, gunakan action=positions, bukan layout"],
+    ])],
+    ["src/agent/tools/captions-lanes.ts", new Map([
+      ["no source with id \"${id}\" (source_list 查 sourceId)", "no source with id \"${id}\" (lihat sourceId melalui source_list)"],
+      ["speakerId selector 不支持:无 per-speaker 车道,请按轨/按 item 选择", "Selector speakerId tidak didukung karena tidak ada lane per pembicara; pilih berdasarkan trek atau item"],
+      ["缺选择器:每条要带 index / sourceId / trackId / itemId / label / variant 之一定位车道,例 {\"index\":0} 或 {\"trackId\":\"A2\"} 或 {\"variant\":{\"languageCode\":\"en\"}};sourceId 用 source_list 查", "Selector belum diberikan: setiap entri harus memakai salah satu dari index / sourceId / trackId / itemId / label / variant. Contoh {\"index\":0}, {\"trackId\":\"A2\"}, atau {\"variant\":{\"languageCode\":\"en\"}}; cari sourceId dengan source_list"],
+      ["cleared — 回到默认 auto-stack", "Dibersihkan — kembali ke auto-stack bawaan"],
+      ["manual-slots 要给槽位表,例 {\"mode\":\"manual-slots\",\"slots\":[{\"id\":\"top\",\"anchor\":\"top-center\",\"offsetYRatio\":0.08},{\"id\":\"bottom\",\"anchor\":\"bottom-center\",\"offsetYRatio\":-0.08}]};再用 source_update 把车道 slotId 钉到槽位", "manual-slots memerlukan daftar slot, misalnya {\"mode\":\"manual-slots\",\"slots\":[{\"id\":\"top\",\"anchor\":\"top-center\",\"offsetYRatio\":0.08},{\"id\":\"bottom\",\"anchor\":\"bottom-center\",\"offsetYRatio\":-0.08}]}; kemudian gunakan source_update untuk memasang slotId lane ke slot"],
+      ["slot 非法:${JSON.stringify(sl)}(需 id + 3×3 anchor)", "Slot tidak valid: ${JSON.stringify(sl)} (memerlukan id + anchor 3×3)"],
+      ["layout_policy 参数例:{\"mode\":\"auto-stack\",\"maxVisibleSources\":2}(上下堆叠)/ {\"mode\":\"single-lane\"}(同位只显一条)/ {\"mode\":\"manual-slots\",\"slots\":[…]} / {\"perSource\":{\"<sourceId>\":{\"maxLines\":2}}} / {\"layoutPolicy\":null} 清除", "Contoh layout_policy: {\"mode\":\"auto-stack\",\"maxVisibleSources\":2} / {\"mode\":\"single-lane\"} / {\"mode\":\"manual-slots\",\"slots\":[…]} / {\"perSource\":{\"<sourceId>\":{\"maxLines\":2}}} / {\"layoutPolicy\":null} untuk menghapus"],
+      ["perSource.maxLines 按 maxLines×模板每页词数近似(分页按词数)", "perSource.maxLines diperkirakan dari maxLines × jumlah kata per halaman template"],
+      ["positions 参数例(可直接照抄改数):{\"positions\":[{\"index\":0,\"anchor\":\"top-center\",\"offsetYRatio\":0.08},{\"index\":1,\"anchor\":\"bottom-center\",\"offsetYRatio\":-0.08}]}——每条 = 选择器(index/sourceId/trackId/variant…)+ anchor(3×3);同 anchor 会堆叠成一块", "Contoh positions: {\"positions\":[{\"index\":0,\"anchor\":\"top-center\",\"offsetYRatio\":0.08},{\"index\":1,\"anchor\":\"bottom-center\",\"offsetYRatio\":-0.08}]}; setiap entri = selector (index/sourceId/trackId/variant…) + anchor 3×3; sumber dengan anchor sama akan ditumpuk"],
+      ["当前没有字幕 source:先 edit_captions action=enable 开字幕(或 source_set 指定 sources),再来摆位", "Belum ada sumber subtitel; jalankan edit_captions action=enable atau tentukan sources dengan source_set sebelum mengatur posisi"],
+      ["anchor 非法:\"${anchor}\"。用 3×3 锚点:top/middle/bottom × left/center/right,如 top-center / bottom-center / middle-left", "Anchor tidak valid: \"${anchor}\". Gunakan anchor 3×3 top/middle/bottom × left/center/right, misalnya top-center / bottom-center / middle-left"],
+      ["同 anchor 的多个 source 在该锚点堆叠为一个普通字幕块;像素级 left/top 用 action=layout(整块)", "Beberapa source dengan anchor yang sama akan ditumpuk menjadi satu blok subtitel; untuk posisi left/top tingkat piksel gunakan action=layout pada seluruh blok"],
+      ["source_update 参数例(可直接照抄改数):{\"updates\":[{\"index\":0,\"anchor\":\"bottom-center\",\"offsetYRatio\":-0.08},{\"trackId\":\"A2\",\"visible\":false},{\"index\":1,\"style\":{\"sizePx\":54,\"color\":\"#fff\"}}]}——每条 = 选择器 + 要改的字段(visible/anchor/offsetXRatio/offsetYRatio/slotId/style/preset/variant);sourceId 用 source_list 查", "Contoh source_update: {\"updates\":[{\"index\":0,\"anchor\":\"bottom-center\",\"offsetYRatio\":-0.08},{\"trackId\":\"A2\",\"visible\":false},{\"index\":1,\"style\":{\"sizePx\":54,\"color\":\"#fff\"}}]}; setiap entri = selector + field yang diubah (visible/anchor/offsetXRatio/offsetYRatio/slotId/style/preset/variant); cari sourceId dengan source_list"],
+      ["当前没有字幕 source:先 edit_captions action=enable 开字幕(或 source_set 指定 sources)", "Belum ada sumber subtitel; jalankan edit_captions action=enable atau tentukan sources dengan source_set"],
+      ["anchor 非法:\"${anchor}\"。用 3×3 锚点,如 top-center / bottom-center / middle-left", "Anchor tidak valid: \"${anchor}\". Gunakan anchor 3×3 seperti top-center / bottom-center / middle-left"],
+      ["variantKind \"${vKind}\" 不支持(仅 translation)", "variantKind \"${vKind}\" tidak didukung (hanya translation)"],
+      ["variant 切换要给翻译目标语言,例 {\"variant\":{\"variantKind\":\"translation\",\"languageCode\":\"en\"}} 或简写 {\"languageCode\":\"en\"}", "Pergantian variant memerlukan bahasa tujuan, misalnya {\"variant\":{\"variantKind\":\"translation\",\"languageCode\":\"en\"}} atau singkatnya {\"languageCode\":\"en\"}"],
+      ["item ${e.itemId.slice(0, 8)} 上没有 \"${vLang}\" 翻译变体 — 先 manage_transcript translation_ensure", "Item ${e.itemId.slice(0, 8)} tidak memiliki varian terjemahan \"${vLang}\" — jalankan manage_transcript translation_ensure terlebih dahulu"],
+      ["style 忽略字段:${mapped.ignored.join(',')}", "Field style yang diabaikan: ${mapped.ignored.join(',')}"],
+    ])],
+    ["src/agent/tools/edit-asset-tools.ts", new Map([
+      ["${refs} 个时间线片段引用了「${asset.name}」。删除只移除媒体池条目,不影响已放置片段。确认请带 confirm:true 重发。", "${refs} klip linimasa mereferensikan \"${asset.name}\". Penghapusan hanya menghapus entri dari pustaka media dan tidak memengaruhi klip yang sudah ditempatkan. Kirim ulang dengan confirm:true untuk mengonfirmasi."],
+    ])],
+    ["src/agent/tools/edit-item-commit.ts", new Map([
+      ["文字", "Teks"],
+      ["纯色", "Warna solid"],
+    ])],
+    ["src/agent/tools/edit-item-generic.ts", new Map([
+      ["文字", "Teks"],
+    ])],
+    ["src/agent/tools/edit-item-validate.ts", new Map([
+      ["该插件未安装或该 id 不是转场条目;用 browse_library category=transitions 查可用清单", "Plugin belum dipasang atau ID bukan item transisi; gunakan browse_library category=transitions untuk melihat daftar yang tersedia"],
+    ])],
+    ["src/agent/tools/effect-tools.ts", new Map([
+      ["unknown action ${args.action}（可选 list/add/update/remove）", "Aksi tidak dikenal ${args.action} (pilihan: list/add/update/remove)"],
+    ])],
+    ["src/agent/tools/followup-tools.ts", new Map([
+      ["display.startsWith('其他') || display.startsWith('other')", "display.startsWith('lain') || display.startsWith('other')"],
+    ])],
+    ["src/agent/tools/frames-tool.ts", new Map([
+      ["render-still 请求失败: ${e instanceof Error ? e.message : String(e)}", "Permintaan render-still gagal: ${e instanceof Error ? e.message : String(e)}"],
+      ["源资产「${asset.name}」contact sheet", "Contact sheet media sumber \"${asset.name}\""],
+      ["（未进时间线合成；每格≈对应源时间区间中点）", "(belum dikomposisikan ke linimasa; tiap sel ≈ titik tengah rentang waktu sumber)"],
+      ["时间线「${state.name}」${frames.length} 帧（绝对时间线坐标 f${frames.join(', f')}，共 ${total} @${state.fps}fps）——目标时间线草稿合成画面（含未提交编辑）", "Linimasa \"${state.name}\" ${frames.length} frame (koordinat absolut f${frames.join(', f')}, total ${total} @${state.fps}fps) — komposit draf linimasa target termasuk edit yang belum disimpan"],
+      ["item ${item.id} 可见源窗口 [${sourceWindow.startFrame}, ${sourceWindow.endFrame})", "item ${item.id} jendela sumber terlihat [${sourceWindow.startFrame}, ${sourceWindow.endFrame})"],
+      ["完整源窗口 [${sourceWindow.startFrame}, ${sourceWindow.endFrame})", "jendela sumber penuh [${sourceWindow.startFrame}, ${sourceWindow.endFrame})"],
+      ["源资产「${asset.name}」blob 预览 · ${windowNote}", "Media sumber \"${asset.name}\" pratinjau blob · ${windowNote}"],
+      ["源资产「${asset.name}」blob contact sheet · ${sheet.sampleCount} samples · cells L→R T→B: ${labelLine} · ${windowNote}", "Media sumber \"${asset.name}\" contact sheet blob · ${sheet.sampleCount} sampel · sel kiri→kanan atas→bawah: ${labelLine} · ${windowNote}"],
+      ["源资产「${asset.name}」${frames.length} 帧（源坐标 f${frames.join(', f')}，共 ${total}）——单独预览，未合成到时间线 · ${windowNote}", "Media sumber \"${asset.name}\" ${frames.length} frame (koordinat sumber f${frames.join(', f')}, total ${total}) — pratinjau terpisah, belum dikomposisikan ke linimasa · ${windowNote}"],
+    ])],
+    ["src/agent/tools/install-skill-tools.ts", new Map([
+      ["技能已安装到用户技能目录（~/.openchatcut/skills/<slug>/），资源库「技能」面板会自动展示。可以在对话中 /skill:<slug> 或从面板激活。", "Skill sudah dipasang ke folder skill pengguna (~/.openchatcut/skills/<slug>/). Panel Skill di Pustaka akan menampilkannya otomatis. Aktifkan melalui /skill:<slug> atau dari panel."],
+    ])],
+    ["src/agent/tools/layout-tools.ts", new Map([
+      ["应用布局 ${layout}", "Terapkan layout ${layout}"],
+    ])],
+    ["src/agent/tools/library-catalog.ts", new Map([
+      ["Library UI: 资源库 → 音频效果.", "UI Pustaka: Pustaka → Efek audio."],
+    ])],
+    ["src/agent/tools/multicam-tools.ts", new Map([
+      ["切换机位", "Ganti kamera"],
+    ])],
+    ["src/agent/tools/project-tools.ts", new Map([
+      ["新工程", "Proyek Baru"],
+      ["speaker-update needs {from:\"A\", to:\"新名字\"} — from = existing speaker label, to = new name", "speaker-update memerlukan {from:\"A\", to:\"Nama Baru\"} — from = label pembicara saat ini, to = nama baru"],
+    ])],
+    ["src/agent/tools/schemas/captions-tools.ts", new Map([
+      ["toolbar 字幕显示", "tombol tampilkan subtitel"],
+    ])],
+    ["src/agent/tools/schemas/font-tools.ts", new Map([
+      ["(case/punctuation-insensitive) — e.g. \"inter\", \"playfair\", \"noto sc\", \"思源黑体\", \"得意黑\",", "(tidak peka huruf besar/kecil atau tanda baca) — misalnya \"inter\", \"playfair\", \"noto sans\", \"roboto\", \"montserrat\","],
+      ["\"抖音美好体\". loadable=false means catalogued only; prefer a loadable alternative or", "\"poppins\". loadable=false berarti hanya ada di katalog; utamakan alternatif yang dapat dimuat atau"],
+    ])],
+    ["src/agent/tools/schemas/install-skill-tools.ts", new Map([
+      ["从 GitHub 安装一个 skill 仓库到本机技能目录（~/.openchatcut/skills/<slug>/），完整安装 SKILL.md 及其 references/scripts/assets/examples。安装后资源库「技能」面板会自动展示，可用 /skill:<slug> 或面板激活。repo 支持 GitHub URL 或 owner/repo（如 \"Jane-xiaoer/paper-collage-ad-codex\"）。slug 可选，默认取 SKILL.md 的 name 或仓库名。", "Pasang repository skill dari GitHub ke folder skill lokal (~/.openchatcut/skills/<slug>/), termasuk SKILL.md serta references/scripts/assets/examples. Setelah dipasang, panel Skill di Pustaka menampilkannya otomatis dan dapat diaktifkan dengan /skill:<slug> atau dari panel. repo menerima URL GitHub atau owner/repo (misalnya \"Jane-xiaoer/paper-collage-ad-codex\"). slug opsional dan secara bawaan memakai name dari SKILL.md atau nama repository."],
+      ["GitHub 仓库：完整 URL（https://github.com/owner/repo）或 owner/repo", "Repository GitHub: URL lengkap (https://github.com/owner/repo) atau owner/repo"],
+      ["可选：安装目录名（必须 kebab-case），默认取 SKILL.md frontmatter name 或仓库名", "Opsional: nama folder instalasi (harus kebab-case), bawaan memakai name pada frontmatter SKILL.md atau nama repository"],
+    ])],
+    ["src/agent/tools/schemas/search-tools.ts", new Map([
+      ["Content to find, e.g. 背景音乐音量 / 字幕样式 / 黄昏的海边", "Konten yang dicari, misalnya volume musik latar / gaya subtitel / pantai saat senja"],
+    ])],
+    ["src/agent/tools/schemas/transcript-tools.ts", new Map([
+      ["Transcript panel 「还原全部」", "panel Transkrip \"Pulihkan Semua\""],
+    ])],
+    ["src/agent/tools/schemas/version-tools.ts", new Map([
+      ["save: display name for the checkpoint (e.g. \"粗剪完成\").", "save: nama tampilan untuk checkpoint (misalnya \"Rough Cut Selesai\")."],
+    ])],
+    ["src/agent/tools/shader-tools.ts", new Map([
+      ["生成的着色器为空", "Shader yang dihasilkan kosong"],
+      ["着色器过长（${src.length} > ${MAX_GLSL_LEN}）", "Shader terlalu panjang (${src.length} > ${MAX_GLSL_LEN})"],
+      ["禁止的指令：${tok}", "Instruksi terlarang: ${tok}"],
+      ["着色器必须采样输入贴图 u_input", "Shader harus melakukan sampling tekstur input u_input"],
+      ["着色器缺少 main() 入口", "Shader tidak memiliki entry main()"],
+      ["着色器必须写出颜色（fragColor / gl_FragColor）", "Shader harus menulis warna (fragColor / gl_FragColor)"],
+      ["未知的采样器（运行时只提供 u_input）：${unknown.join(', ')}", "Sampler tidak dikenal (runtime hanya menyediakan u_input): ${unknown.join(', ')}"],
+      ["自定义着色器", "Shader kustom"],
+      ["submit_shader 自定义效果：${display}", "Efek kustom submit_shader: ${display}"],
+      ["转场着色器必须采样前一段 u_outgoing", "Shader transisi harus melakukan sampling segmen sebelumnya u_outgoing"],
+      ["转场着色器必须采样后一段 u_incoming", "Shader transisi harus melakukan sampling segmen berikutnya u_incoming"],
+      ["转场着色器必须用进度 u_progress（0→1）驱动混合", "Shader transisi harus menggunakan progress u_progress (0→1) untuk mengendalikan campuran"],
+      ["未知的采样器（运行时只提供 u_outgoing / u_incoming）：${unknown.join(', ')}", "Sampler tidak dikenal (runtime hanya menyediakan u_outgoing / u_incoming): ${unknown.join(', ')}"],
+      ["自定义转场", "Transisi kustom"],
+      ["着色器编译失败", "Kompilasi shader gagal"],
+      ["（默认 ${p.default}，范围 ${p.min}..${p.max}）", "(bawaan ${p.default}, rentang ${p.min}..${p.max})"],
+    ])],
+  ]);
+  for (const [rel, replacements] of patches) {
+    let source = read(rel);
+    for (const [from, to] of replacements) {
+      if (!source.includes(from)) throw new Error(`Agent runtime translation anchor not found: ${rel} -> ${from.slice(0, 80)}`);
+      source = source.split(from).join(to);
+    }
+    write(rel, source);
+  }
+}
+
 console.log('MiniCut overlay applied successfully.');
