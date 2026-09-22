@@ -290,7 +290,7 @@ export function FieldRow({ field, ctx }: { field: SettingsField; ctx: FieldCtx }
   // Model / routing field echoes the current value of the server; secret / base url will never be backfilled.
   const shown = value ?? (isModelField(field) ? modelValue(status, field.name) : '');
   // Select uses the "default" option to clear; toggle's off/on itself is set/clear.
-  const clearable = configured && field.kind !== 'select' && field.kind !== 'toggle';
+  const clearable = configured && field.kind !== 'select' && field.kind !== 'toggle' && field.name !== 'LLM_GEMINI_API_KEY';
   const discovered = field.name === 'CODEX_MODEL'
     ? ctx.codex.models.map((model) => model.id)
     : field.name === 'COPILOT_MODEL'
@@ -329,8 +329,7 @@ export function FieldRow({ field, ctx }: { field: SettingsField; ctx: FieldCtx }
           : field.kind === 'directory'
             ? <DirectoryInput field={field} shown={shown} stagedClear={stagedClear} onStage={onStage} />
             : field.name === 'LLM_GEMINI_API_KEY'
-              ? <GeminiKeyPoolInput field={field} shown={shown} reveal={reveal} configured={configured}
-                  stagedClear={stagedClear} onStage={onStage} />
+              ? <GeminiKeyManager refreshStatus={ctx.refreshStatus} />
               : <TextInput field={field} shown={shown} reveal={reveal} configured={configured}
                   stagedClear={stagedClear} onStage={onStage} />}
       {field.note && <span style={{ fontSize: 10.5, color: theme.textDim }}>{t(field.note)}</span>}
@@ -411,60 +410,145 @@ interface TextInputProps {
   onStage: (field: SettingsField, raw: string) => void;
 }
 
-function normalizeGeminiKeyPool(raw: string): string {
-  return parseGeminiApiKeys(raw).join(',');
+interface GeminiPoolEntry {
+  index: number;
+  suffix: string;
+}
+interface GeminiPoolStatus {
+  count: number;
+  entries: GeminiPoolEntry[];
 }
 
-function geminiKeyPoolDisplay(raw: string): string {
-  return normalizeGeminiKeyPool(raw).split(',').filter(Boolean).join('\n');
-}
-
-function GeminiKeyPoolInput({ field, shown, reveal, configured, stagedClear, onStage }: TextInputProps) {
+function GeminiKeyManager({ refreshStatus }: { refreshStatus: () => Promise<void> }) {
   const t = useT();
-  const [draft, setDraft] = useState(() => geminiKeyPoolDisplay(shown));
+  const [pool, setPool] = useState<GeminiPoolStatus>({ count: 0, entries: [] });
+  const [draft, setDraft] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const reload = async (): Promise<void> => {
+    const response = await fetch('/api/keys/gemini-pool');
+    const body = await response.json() as GeminiPoolStatus & { error?: string };
+    if (!response.ok) throw new Error(body.error || t('Gagal membaca API Key Gemini'));
+    setPool(body);
+  };
 
   useEffect(() => {
-    if (!shown) {
-      setDraft('');
+    void reload().catch((reason) => {
+      setMessage(reason instanceof Error ? reason.message : String(reason));
+    });
+  }, []);
+
+  const mutate = async (path: string, body: Record<string, unknown>): Promise<void> => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const next = await response.json() as GeminiPoolStatus & { error?: string };
+      if (!response.ok) throw new Error(next.error || t('Gagal memperbarui API Key Gemini'));
+      setPool(next);
+      await refreshStatus();
+    } catch (reason) {
+      setMessage(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const add = async (): Promise<void> => {
+    const keys = parseGeminiApiKeys(draft);
+    if (keys.length === 0) {
+      setMessage(t('Tempel minimal satu API Key Gemini.'));
       return;
     }
-    if (normalizeGeminiKeyPool(draft) !== shown) {
-      setDraft(geminiKeyPoolDisplay(shown));
-    }
-  }, [shown]);
+    await mutate('/api/keys/gemini-pool/add', { keys });
+    setDraft('');
+  };
 
-  const keyCount = normalizeGeminiKeyPool(draft).split(',').filter(Boolean).length;
-  const placeholder = configured && !shown
-    ? t('Pool API Key Gemini sudah tersimpan. Tempel daftar baru untuk mengganti semua key.')
-    : t('Tempel API Key Gemini di sini — satu key per baris, maksimal 100 key.');
+  const remove = async (index: number): Promise<void> => {
+    await mutate('/api/keys/gemini-pool/remove', { index });
+  };
 
+  const clear = async (): Promise<void> => {
+    if (pool.count === 0) return;
+    await mutate('/api/keys/gemini-pool/clear', {});
+  };
+
+  const pendingCount = parseGeminiApiKeys(draft).length;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-      <textarea
-        autoComplete="off"
-        spellCheck={false}
-        rows={6}
-        value={stagedClear ? '' : draft}
-        onChange={(event) => {
-          const nextDraft = event.target.value;
-          setDraft(nextDraft);
-          onStage(field, normalizeGeminiKeyPool(nextDraft));
-        }}
-        placeholder={placeholder}
-        style={{
-          ...(stagedClear ? { ...input, border: `0.5px solid ${WARN}` } : input),
-          minHeight: 112,
-          resize: 'vertical',
-          lineHeight: 1.45,
-          fontFamily: 'ui-monospace, SFMono-Regular, Consolas, monospace',
-          ...(!reveal ? ({ WebkitTextSecurity: 'disc' } as React.CSSProperties) : {}),
-        }}
-      />
-      <span style={{ fontSize: 10.5, color: keyCount >= 100 ? WARN : theme.textDim }}>
-        {configured && keyCount === 0
-          ? t('Pool tersimpan. Untuk mengganti, tempel daftar key baru. Untuk menghapus semuanya, gunakan tombol Hapus.')
-          : t('{count}/100 API Key · satu key per baris · duplikat dibuang otomatis', { count: keyCount })}
-      </span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+        padding: '8px 10px', border: `1px solid ${theme.border}`, borderRadius: 7,
+      }}>
+        <div>
+          <div style={{ fontSize: 11.5, fontWeight: 650 }}>{t('API Key tersimpan')}</div>
+          <div style={{ fontSize: 10.5, color: theme.textDim }}>
+            {t('{count}/100 key aktif di pool Gemini', { count: pool.count })}
+          </div>
+        </div>
+        {pool.count > 0 && (
+          <button type="button" disabled={busy} onClick={() => { void clear(); }}
+            style={{ ...clearBtn, color: WARN }}>
+            {t('Hapus Semua')}
+          </button>
+        )}
+      </div>
+
+      {pool.entries.length > 0 && (
+        <div style={{ display: 'grid', gap: 5, maxHeight: 150, overflowY: 'auto' }}>
+          {pool.entries.map((entry) => (
+            <div key={entry.index} style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '6px 8px', border: `1px solid ${theme.border}`, borderRadius: 6,
+            }}>
+              <span style={{ width: 24, color: theme.textDim, fontSize: 10.5 }}>#{entry.index + 1}</span>
+              <span style={{ flex: 1, fontFamily: 'ui-monospace, SFMono-Regular, Consolas, monospace', fontSize: 11 }}>
+                ••••••••••••{entry.suffix}
+              </span>
+              <button type="button" disabled={busy} onClick={() => { void remove(entry.index); }}
+                style={clearBtn}>
+                {t('Hapus')}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'stretch', gap: 7 }}>
+        <textarea
+          autoComplete="off"
+          spellCheck={false}
+          rows={3}
+          value={draft}
+          disabled={busy || pool.count >= 100}
+          onChange={(event) => setDraft(event.target.value)}
+          onPaste={(event) => {
+            const pasted = event.clipboardData.getData('text');
+            if (parseGeminiApiKeys(pasted).length > 1) {
+              event.preventDefault();
+              setDraft((current) => [current, pasted].filter(Boolean).join('\n'));
+            }
+          }}
+          placeholder={t('Tempel API Key di sini. Bisa 1 key atau banyak sekaligus, satu per baris.')}
+          style={{ ...input, flex: 1, minHeight: 70, resize: 'vertical', lineHeight: 1.45 }}
+        />
+        <button type="button" disabled={busy || pendingCount === 0 || pool.count >= 100}
+          onClick={() => { void add(); }}
+          style={{ ...testBtn, minWidth: 96, alignSelf: 'stretch' }}>
+          {busy ? t('Memproses…') : pendingCount > 1
+            ? t('Tambah {count} Key', { count: pendingCount })
+            : t('Tambah Key')}
+        </button>
+      </div>
+      <div style={{ fontSize: 10.5, color: theme.textDim }}>
+        {t('Key lama tidak perlu ditempel ulang. Tambah key baru kapan saja; duplikat dibuang otomatis dan maksimal 100 key.')}
+      </div>
+      {message && <div style={{ fontSize: 10.5, color: WARN }}>{message}</div>}
     </div>
   );
 }
