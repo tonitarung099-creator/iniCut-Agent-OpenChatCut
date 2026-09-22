@@ -514,4 +514,160 @@ replaceRequired(
   }
 }
 
+// ---- MiniCut settings: Gemini-only AI surface --------------------------------
+{
+  const rel = 'src/components/settings/settingsSchema.ts';
+  let source = read(rel);
+  const start = source.indexOf('export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [');
+  const endMarker = '\n\n/** Temporary changes:';
+  const end = source.indexOf(endMarker, start);
+  if (start < 0 || end < 0) throw new Error('settings category block not found');
+
+  const replacement = `export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
+  {
+    key: 'agent', title: 'Gemini Agent', icon: 'sparkles',
+    groups: [
+      {
+        key: 'llm',
+        title: 'Google Gemini',
+        hint: 'Satu-satunya AI Agent di MiniCut.',
+        vendors: AGENT_VENDOR_PAGES_WITH_VISION,
+      },
+    ],
+  },
+  {
+    key: 'proxy', title: 'Proxy jaringan', icon: 'plug',
+    groups: [
+      {
+        key: 'proxy',
+        title: 'Proxy jaringan',
+        hint: 'Opsional, hanya jika koneksi Gemini memerlukan proxy.',
+        vendors: [PROXY_PAGE],
+      },
+    ],
+  },
+  {
+    key: 'assets', title: 'Media · Transkripsi', icon: 'folder',
+    groups: [
+      {
+        key: 'stock',
+        title: 'Media stok online',
+        hint: 'Pencarian media stok untuk bahan edit; bukan model AI.',
+        vendors: [
+          { key: 'stock/pexels', vendor: 'pexels', title: 'Pexels', fields: [secret('PEXELS_API_KEY', 'API Key')] },
+          { key: 'stock/pixabay', vendor: 'pixabay', title: 'Pixabay', fields: [secret('PIXABAY_API_KEY', 'API Key')] },
+          { key: 'stock/unsplash', vendor: 'unsplash', title: 'Unsplash', fields: [secret('UNSPLASH_ACCESS_KEY', 'Access Key')] },
+          { key: 'stock/freesound', vendor: 'freesound', title: 'Freesound', fields: [secret('FREESOUND_API_KEY', 'API Key')] },
+        ],
+      },
+      {
+        key: 'transcription',
+        title: 'Transkripsi lokal',
+        hint: 'Whisper lokal: gratis, offline, dan tidak memakai AI API lain.',
+        vendors: [localAsrPage],
+      },
+    ],
+  },
+  {
+    key: 'cloud', title: 'Penyimpanan', icon: 'cloud',
+    groups: [
+      {
+        key: 'storage',
+        title: 'Lokasi proyek bawaan',
+        hint: 'Atur lokasi proyek dan cadangan opsional.',
+        vendors: [
+          {
+            key: 'storage/projects', vendor: 'localdisk', title: 'Lokasi proyek bawaan',
+            note: 'Proyek, riwayat versi, dan media buatan aplikasi disimpan di sini.',
+            fields: [
+              directory('OPENCHATCUT_DATA_DIR', 'Lokasi proyek bawaan', 'Folder data bawaan aplikasi',
+                'Klik Pilih folder di desktop, atau isi path absolut secara manual.'),
+            ],
+          },
+          {
+            key: 'storage/r2', vendor: 'r2', title: 'Cloudflare R2',
+            note: 'Opsional untuk cadangan cloud. Ini layanan penyimpanan, bukan model AI.',
+            fields: [
+              { name: 'R2_ENABLED', label: 'Sinkronisasi cloud', kind: 'toggle' },
+              secret('R2_ACCOUNT_ID', 'Account ID'),
+              secret('R2_ACCESS_KEY_ID', 'Access Key ID'),
+              secret('R2_SECRET_ACCESS_KEY', 'Secret Access Key'),
+              secret('R2_BUCKET', 'Nama bucket'),
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    key: 'tools', title: 'Alat lanjutan', icon: 'sliders',
+    groups: [
+      {
+        key: 'sandbox',
+        title: 'Sandbox',
+        hint: 'Opsional untuk menjalankan skrip alat secara terisolasi; bukan model AI.',
+        vendors: [{
+          key: 'sandbox/e2b', vendor: 'e2b', title: 'E2B',
+          fields: [
+            secret('E2B_API_KEY', 'API Key'),
+            text('E2B_TEMPLATE', 'ID template (opsional)'),
+          ],
+        }],
+      },
+      {
+        key: 'web',
+        title: 'Pengambilan data web',
+        hint: 'Opsional untuk mengambil isi halaman web; bukan model AI.',
+        vendors: [{
+          key: 'web/firecrawl', vendor: 'firecrawl', title: 'Firecrawl',
+          fields: [secret('FIRECRAWL_API_KEY', 'API Key')],
+        }],
+      },
+    ],
+  },
+  {
+    key: 'interface', title: 'Antarmuka', icon: 'layoutPanel',
+    groups: [
+      {
+        key: 'display',
+        title: 'Tampilan',
+        hint: 'Atur skala antarmuka MiniCut.',
+        vendors: [{
+          key: 'display/scale', vendor: 'localasr', title: 'Skala antarmuka',
+          fields: [{
+            name: 'UI_SCALE', label: 'Skala antarmuka', kind: 'select', defaultLabel: '100%',
+            options: [
+              { value: '0.8', label: '80%' },
+              { value: '0.9', label: '90%' },
+              { value: '1', label: '100%' },
+              { value: '1.1', label: '110%' },
+              { value: '1.25', label: '125%' },
+              { value: '1.5', label: '150%' },
+            ],
+          }],
+        }],
+      },
+    ],
+  },
+  {
+    key: 'local', title: 'Model lokal', icon: 'database',
+    groups: [
+      {
+        key: 'local',
+        title: 'Model lokal',
+        hint: 'Model lokal untuk transkripsi, beat, musik, dan pencarian visual. Data tetap di komputer.',
+        vendors: [
+          { key: 'local/asr', vendor: 'localasr', title: 'Transkripsi lokal', icon: 'mic', kind: 'local-models', fields: localAsrPage.fields },
+          { key: 'local/music/packs', vendor: 'localasr', title: 'Beat & analisis musik', icon: 'music', kind: 'local-models', fields: [] },
+          { key: 'local/semantic/setup', vendor: 'localasr', title: 'Pencarian visual lokal', icon: 'search', kind: 'local-models', fields: [] },
+        ],
+      },
+    ],
+  },
+];`;
+
+  source = source.slice(0, start) + replacement + source.slice(end);
+  write(rel, source);
+}
+
 console.log('MiniCut overlay applied successfully.');
