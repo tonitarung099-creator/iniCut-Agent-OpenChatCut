@@ -140,7 +140,10 @@ const missingTools = [...new Set(coverage.values())].filter((tool) => !knownTool
 assert.deepEqual(missingTools, [], `parity mappings reference missing Agent tools: ${missingTools.join(', ')}`);
 
 assert.equal(knownTools.has('manual_editor_action'), true);
-const bootActivation = new ToolActivation(TOOL_SCHEMAS, []);
+const bootActivation = new ToolActivation(
+  TOOL_SCHEMAS,
+  [{ role: 'user', content: 'edit manual: pilih klip ini' }],
+);
 assert.equal(
   bootActivation.names().includes('manual_editor_action'),
   true,
@@ -160,6 +163,13 @@ for (const request of [
     readOnlyActivation.names().includes('manual_editor_action'),
     false,
     `read-only request must not pre-activate manual mutations: ${request}`,
+  );
+
+  const afterReadTool = readOnlyActivation.withToolResult('read_timeline', { ok: true }).activation;
+  assert.equal(
+    afterReadTool.names().includes('manual_editor_action'),
+    false,
+    `read-only request must stay read-only after tool results: ${request}`,
   );
 }
 assert.equal(commandNames.length, coverage.size + internalOnly.size);
