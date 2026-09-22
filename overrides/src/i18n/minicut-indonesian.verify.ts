@@ -72,6 +72,7 @@ for (const path of [
   'desktop/runtime-preflight.ts',
   'server/mobile-upload-service.ts',
   'server/plugins/llm-proxy.ts',
+  'server/key-probes.ts',
 ]) {
   const source = readFileSync(path, 'utf8');
   assert.equal(CJK.test(source), false, `Foreign CJK text remains in visible MiniCut source: ${path}`);
