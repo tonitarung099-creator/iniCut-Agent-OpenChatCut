@@ -102,6 +102,10 @@ jobs:
         working-directory: upstream
         run: npx tsx src/agent/tool-routing.minicut.verify.ts
 
+      - name: Uji paritas Gemini dengan editor manual
+        working-directory: upstream
+        run: npx tsx src/agent/manual-editor-parity.verify.ts
+
       - name: Audit UI khusus Bahasa Indonesia
         working-directory: upstream
         run: npx tsx src/i18n/minicut-indonesian.verify.ts
