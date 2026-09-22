@@ -101,7 +101,7 @@ function llmProbe(provider: LlmProvider): ProbeDef {
       const root = resolveLlmBaseUrl(provider, get(baseUrlName), AI_SDK_BASE_URL_FORMAT);
       return fetchWithProxy(`${root}/models`, { signal: t(), headers });
     },
-    models: parseModelCatalog,
+    models: provider === 'gemini' ? parseGeminiAgentModelCatalog : parseModelCatalog,
   };
 }
 
@@ -117,6 +117,31 @@ export function parseModelCatalog(bodyText: string): string[] {
       .map((id) => id.trim())
       .filter(Boolean))]
       .sort((a, b) => a.localeCompare(b));
+  } catch {
+    return [];
+  }
+}
+
+export function parseGeminiAgentModelCatalog(bodyText: string): string[] {
+  try {
+    const body = JSON.parse(bodyText) as {
+      models?: Array<{
+        name?: unknown;
+        supportedGenerationMethods?: unknown;
+      }>;
+    };
+    const rows = Array.isArray(body.models) ? body.models : [];
+    const blocked = /(?:embedding|image|tts|transcribe|live|robotics|omni)/i;
+    return [...new Set(rows.flatMap((row) => {
+      const raw = typeof row.name === 'string' ? row.name.trim() : '';
+      if (!raw) return [];
+      const id = raw.replace(/^models\//, '');
+      const methods = Array.isArray(row.supportedGenerationMethods)
+        ? row.supportedGenerationMethods.filter((method): method is string => typeof method === 'string')
+        : [];
+      if (!methods.includes('generateContent') || blocked.test(id) || !/^gemini-/i.test(id)) return [];
+      return [id];
+    }))].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
   } catch {
     return [];
   }
