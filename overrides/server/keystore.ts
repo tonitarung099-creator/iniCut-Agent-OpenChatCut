@@ -443,6 +443,10 @@ export interface GeminiPoolEntry {
 export interface GeminiPoolStatus {
   count: number;
   entries: GeminiPoolEntry[];
+  /** Present on add operations only. */
+  added?: number;
+  duplicates?: number;
+  overflow?: number;
 }
 
 /** Secret-safe Gemini pool metadata: never returns the API key itself. */
@@ -457,9 +461,27 @@ export function geminiPoolStatus(): GeminiPoolStatus {
 export async function addGeminiPoolKeys(values: readonly unknown[]): Promise<GeminiPoolStatus> {
   const current = parseGeminiApiKeys(getKey("LLM_GEMINI_API_KEY"));
   const incoming = parseGeminiApiKeys(values.map((value) => String(value ?? "")).join("\n"));
-  const merged = parseGeminiApiKeys([...current, ...incoming].join(","));
-  await setKeys({ LLM_GEMINI_API_KEY: merged.join(",") });
-  return geminiPoolStatus();
+  const seen = new Set(current);
+  let added = 0;
+  let duplicates = 0;
+  let overflow = 0;
+
+  for (const key of incoming) {
+    if (seen.has(key)) {
+      duplicates += 1;
+      continue;
+    }
+    if (current.length >= 100) {
+      overflow += 1;
+      continue;
+    }
+    seen.add(key);
+    current.push(key);
+    added += 1;
+  }
+
+  await setKeys({ LLM_GEMINI_API_KEY: current.join(",") });
+  return { ...geminiPoolStatus(), added, duplicates, overflow };
 }
 
 export async function removeGeminiPoolKey(index: number): Promise<GeminiPoolStatus> {
