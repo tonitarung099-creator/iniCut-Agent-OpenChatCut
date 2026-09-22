@@ -144,8 +144,24 @@ const bootActivation = new ToolActivation(TOOL_SCHEMAS, []);
 assert.equal(
   bootActivation.names().includes('manual_editor_action'),
   true,
-  'manual_editor_action must always be available as Gemini parity fallback',
+  'manual_editor_action must be available as Gemini parity fallback on editing turns',
 );
+
+for (const request of [
+  'jangan edit, hanya baca proyek ini',
+  'jangan mengubah apa pun, cuma baca',
+  'read only, do not edit this project',
+]) {
+  const readOnlyActivation = new ToolActivation(
+    TOOL_SCHEMAS,
+    [{ role: 'user', content: request }],
+  );
+  assert.equal(
+    readOnlyActivation.names().includes('manual_editor_action'),
+    false,
+    `read-only request must not pre-activate manual mutations: ${request}`,
+  );
+}
 assert.equal(commandNames.length, coverage.size + internalOnly.size);
 assert.ok(commandNames.length >= 90, 'unexpectedly small EditorCommands surface');
 
