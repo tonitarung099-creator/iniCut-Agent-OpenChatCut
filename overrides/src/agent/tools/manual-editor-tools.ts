@@ -70,7 +70,7 @@ export async function execManualEditorTool(
       return { error: `Flag trek tidak didukung: ${flag}` };
     }
     if (typeof args.value !== 'boolean') return { error: 'value boolean wajib diisi.' };
-    const current = Boolean((state.tracks[track] as Record<string, unknown> | undefined)?.[flag]);
+    const current = Boolean((state.tracks?.[track] as Record<string, unknown> | undefined)?.[flag]);
     if (current !== args.value) {
       ctx.commands.toggleTrackFlag(track, flag as 'hidden' | 'muted' | 'collapsed' | 'locked');
     }
