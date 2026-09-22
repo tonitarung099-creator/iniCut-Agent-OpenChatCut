@@ -523,9 +523,10 @@ replaceRequired(
   const rel = 'src/components/settings/settingsSchema.ts';
   let source = read(rel);
   const start = source.indexOf('export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [');
-  const endMarker = '\n\n/** Temporary changes:';
-  const end = source.indexOf(endMarker, start);
-  if (start < 0 || end < 0) throw new Error('settings category block not found');
+  const stagedMarker = 'export type StagedValues = Record<string, string>;';
+  const staged = source.indexOf(stagedMarker, start);
+  const end = staged < 0 ? -1 : source.lastIndexOf('];', staged);
+  if (start < 0 || staged < 0 || end < 0) throw new Error('settings category block not found');
 
   const replacement = `export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
   {
@@ -670,7 +671,7 @@ replaceRequired(
   },
 ];`;
 
-  source = source.slice(0, start) + replacement + source.slice(end);
+  source = source.slice(0, start) + replacement + source.slice(end + 2);
   write(rel, source);
 }
 
