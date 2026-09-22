@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { TOOL_SCHEMAS } from './tools';
+import { ToolActivation } from './tool-activation';
 
 const coverage = new Map<string, string>();
 
@@ -139,6 +140,12 @@ const missingTools = [...new Set(coverage.values())].filter((tool) => !knownTool
 assert.deepEqual(missingTools, [], `parity mappings reference missing Agent tools: ${missingTools.join(', ')}`);
 
 assert.equal(knownTools.has('manual_editor_action'), true);
+const bootActivation = new ToolActivation(TOOL_SCHEMAS, []);
+assert.equal(
+  bootActivation.names().includes('manual_editor_action'),
+  true,
+  'manual_editor_action must always be available as Gemini parity fallback',
+);
 assert.equal(commandNames.length, coverage.size + internalOnly.size);
 assert.ok(commandNames.length >= 90, 'unexpectedly small EditorCommands surface');
 
