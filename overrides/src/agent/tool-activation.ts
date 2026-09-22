@@ -153,11 +153,18 @@ export class ToolActivation {
     const readOnly = isReadOnlyRoutingHint(request);
     const routed = routedNames(catalog, messages);
     const searchAllowed = allowSearch;
+    const inheritedNames = [...activeNames];
+    // Internal activation rebuilds pass messages=[] after a tool result. In
+    // that case, preserve whether the parity bridge was already active rather
+    // than silently re-enabling mutations for a read-only request.
+    const allowManualParity = request
+      ? !readOnly
+      : inheritedNames.includes('manual_editor_action');
     const requested = [
-      ...bootNames().filter((name) => name !== 'manual_editor_action' || !readOnly),
+      ...bootNames().filter((name) => name !== 'manual_editor_action' || allowManualParity),
       ...activatedToolNamesFromMessages(messages),
       ...routed.names,
-      ...activeNames,
+      ...inheritedNames,
     ].filter((name) => searchAllowed || name !== 'ToolSearch');
     this.activeNames = new Set(requested.filter((name) => this.byName.has(name)));
   }
