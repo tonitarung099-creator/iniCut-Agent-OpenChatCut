@@ -9,11 +9,23 @@ import {
 import { resolveLlmProviderConfig } from '../llm-config.ts';
 import { xaiOauthAccessToken } from '../xai-oauth-session.ts';
 import { proxyMiddleware } from '../proxy.ts';
-import { geminiApiKeyCount, nextGeminiApiKey } from '../../shared/gemini-key-pool.ts';
+import { geminiApiKeySequence } from '../../shared/gemini-key-pool.ts';
 
 function keyReader(name: string): string {
   return getKey(name as KeyName);
 }
+
+const geminiKeysByRequest = new WeakMap<IncomingMessage, string[]>();
+
+function geminiKeysForRequest(req: IncomingMessage | undefined, raw: string): string[] {
+  if (!req) return geminiApiKeySequence(raw);
+  const existing = geminiKeysByRequest.get(req);
+  if (existing) return existing;
+  const sequence = geminiApiKeySequence(raw);
+  geminiKeysByRequest.set(req, sequence);
+  return sequence;
+}
+
 
 export function llmProviderForRequest(_req?: IncomingMessage): LlmProvider {
   // MiniCut Agent is Gemini-only. Ignore provider headers and stale settings
@@ -37,7 +49,8 @@ export function llmHeaders(req?: IncomingMessage): Record<string, string> {
   const protocol = protocolForProvider(config.provider);
   if (protocol === 'anthropic') return { 'x-api-key': config.apiKey, 'anthropic-version': '2023-06-01' };
   if (protocol === 'google') {
-    const key = nextGeminiApiKey(config.apiKey);
+    const keys = geminiKeysForRequest(req, config.apiKey);
+    const key = keys.shift() ?? '';
     return key ? { 'x-goog-api-key': key } : {};
   }
   return { authorization: `Bearer ${config.apiKey}` };
@@ -91,7 +104,7 @@ export function llmProxyPlugin(): Plugin {
         // request with the next key instead of failing the user's edit.
         retryAttempts: (req) => {
           const config = resolveLlmProviderConfig(llmProviderForRequest(req), keyReader);
-          return Math.max(1, geminiApiKeyCount(config.apiKey));
+          return Math.max(1, geminiKeysForRequest(req, config.apiKey).length);
         },
         retryStatuses: [401, 403, 429],
       }));
