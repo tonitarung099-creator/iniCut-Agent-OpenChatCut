@@ -439,7 +439,7 @@ function GeminiKeyManager({ refreshStatus }: { refreshStatus: () => Promise<void
     });
   }, []);
 
-  const mutate = async (path: string, body: Record<string, unknown>): Promise<void> => {
+  const mutate = async (path: string, body: Record<string, unknown>): Promise<boolean> => {
     setBusy(true);
     setMessage(null);
     try {
@@ -451,9 +451,18 @@ function GeminiKeyManager({ refreshStatus }: { refreshStatus: () => Promise<void
       const next = await response.json() as GeminiPoolStatus & { error?: string };
       if (!response.ok) throw new Error(next.error || t('Gagal memperbarui API Key Gemini'));
       setPool(next);
-      await refreshStatus();
+      // Pool mutation has already succeeded at this point. A status refresh is
+      // useful for the rest of Settings, but a refresh failure must not make the
+      // successful mutation look failed or cause the pasted keys to disappear.
+      try {
+        await refreshStatus();
+      } catch {
+        setMessage(t('API Key sudah diperbarui, tetapi status tampilan belum dapat dimuat ulang.'));
+      }
+      return true;
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : String(reason));
+      return false;
     } finally {
       setBusy(false);
     }
@@ -465,8 +474,8 @@ function GeminiKeyManager({ refreshStatus }: { refreshStatus: () => Promise<void
       setMessage(t('Tempel minimal satu API Key Gemini.'));
       return;
     }
-    await mutate('/api/keys/gemini-pool/add', { keys });
-    setDraft('');
+    const ok = await mutate('/api/keys/gemini-pool/add', { keys });
+    if (ok) setDraft('');
   };
 
   const remove = async (index: number): Promise<void> => {
