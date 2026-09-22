@@ -21,7 +21,7 @@ import {
 } from '../shared/llm-providers.ts';
 import { versionedApiBaseUrl } from './plugins/media-provider-config.ts';
 import { xaiOauthAccessToken } from './xai-oauth-session.ts';
-import { firstGeminiApiKey } from '../shared/gemini-key-pool.ts';
+import { parseGeminiApiKeys } from '../shared/gemini-key-pool.ts';
 import {
   classifyStatus,
   networkMessage,
@@ -90,15 +90,30 @@ function llmProbe(provider: LlmProvider): ProbeDef {
   const isLocal = isLocalLlmProvider(provider);
   return {
     needs: isLocal ? [[]] : [[apiKeyName]],
-    run: (get) => {
+    run: async (get) => {
       const storedKey = get(apiKeyName);
-      const key = protocol === 'google' ? firstGeminiApiKey(storedKey) : storedKey;
-      const headers = protocol === 'anthropic'
-        ? { 'x-api-key': key, 'anthropic-version': '2023-06-01' }
-        : protocol === 'google'
-          ? { 'x-goog-api-key': key }
-          : key ? bearer(key) : {};
       const root = resolveLlmBaseUrl(provider, get(baseUrlName), AI_SDK_BASE_URL_FORMAT);
+
+      if (protocol === 'google') {
+        const keys = parseGeminiApiKeys(storedKey);
+        if (keys.length === 0) {
+          return fetchWithProxy(`${root}/models`, { signal: t(), headers: {} });
+        }
+        for (let index = 0; index < keys.length; index += 1) {
+          const response = await fetchWithProxy(`${root}/models`, {
+            signal: t(),
+            headers: { 'x-goog-api-key': keys[index]! },
+          });
+          const retryable = response.status === 401 || response.status === 403 || response.status === 429;
+          if (response.ok || !retryable || index === keys.length - 1) return response;
+          // Release the failed response before testing the next key.
+          await response.arrayBuffer().catch(() => new ArrayBuffer(0));
+        }
+      }
+
+      const headers = protocol === 'anthropic'
+        ? { 'x-api-key': storedKey, 'anthropic-version': '2023-06-01' }
+        : storedKey ? bearer(storedKey) : {};
       return fetchWithProxy(`${root}/models`, { signal: t(), headers });
     },
     models: provider === 'gemini' ? parseGeminiAgentModelCatalog : parseModelCatalog,
