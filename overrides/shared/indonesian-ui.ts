@@ -954,6 +954,19 @@ const DIRECT: Record<string, string> = {
   '横转竖': 'Lanskap ke vertikal',
   '将当前工程转换为 9:16 竖屏，并调整主要画面构图': 'Ubah proyek saat ini menjadi format vertikal 9:16 dan sesuaikan komposisi visual utama.',
 
+  'Migrate project data to SQLite: more reliable writes, faster loading, full-text search. Original JSON files stay read-only, so you can always roll back.': 'Pindahkan data proyek ke SQLite: penulisan lebih andal, pemuatan lebih cepat, dan mendukung pencarian teks. File JSON lama tetap disimpan hanya-baca sehingga bisa dipakai untuk pemulihan.',
+  'Migrate to SQLite': 'Pindahkan ke SQLite',
+  'Dismiss': 'Abaikan',
+  'Verifies the endpoint and key, then loads the models available from that API': 'Memeriksa endpoint dan API Key, lalu memuat model yang tersedia dari API tersebut',
+  'Keys are stored only in your local': 'Key hanya disimpan di komputer ini',
+  ' (gitignored), injected by the server — ': ' (diabaikan Git), digunakan oleh server — ',
+  'never sent to the browser.': 'tidak pernah dikirim kembali ke browser.',
+  'My Projects': 'Proyek Saya',
+  'Migrate project data to SQLite': 'Pindahkan data proyek ke SQLite',
+  '可将工程数据迁移到 SQLite：写入更可靠、加载更快、支持全文搜索。原始 JSON 文件只读保留，随时可回滚。': 'Pindahkan data proyek ke SQLite: penulisan lebih andal, pemuatan lebih cepat, dan mendukung pencarian teks. File JSON lama tetap disimpan hanya-baca untuk pemulihan.',
+  '忽略': 'Abaikan',
+  '迁移到 SQLite': 'Pindahkan ke SQLite',
+
   // Chinese source keys that are used outside the regular dictionary path.
   '选择素材保存目录': 'Pilih folder penyimpanan media',
   '选择导出目录': 'Pilih folder ekspor',
