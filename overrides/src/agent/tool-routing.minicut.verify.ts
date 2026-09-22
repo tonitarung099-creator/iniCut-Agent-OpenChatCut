@@ -16,5 +16,9 @@ has('hapus bagian hening', 'remove_silence');
 has('normalkan audio dan musik', 'normalize_loudness');
 has('ekspor hasil akhir', 'submit_export');
 has('cari sorotan dari adegan film ini', 'find_highlights');
+has('ngedit manual: pilih klip ini', 'manual_editor_action');
+has('sembunyikan trek V2', 'manual_editor_action');
+has('kunci trek audio A1', 'manual_editor_action');
+has('reframe manual klip yang dipilih', 'manual_editor_action');
 
 console.log('MiniCut Indonesian agent routing checks passed');
