@@ -13,7 +13,7 @@ const GEMINI_PAGE: SettingsVendorPage = {
   key: 'llm/gemini',
   vendor: 'gemini',
   title: 'Google · Gemini',
-  note: 'MiniCut hanya menggunakan Gemini untuk Agent. Tempel API Key satu per baris; MiniCut mendukung hingga 100 key dan merotasinya otomatis di sisi server.',
+  note: 'MiniCut hanya menggunakan Google Gemini untuk Agent. Tambahkan API Key lewat pengelola key di bawah; key lama tidak perlu ditempel ulang.',
   fields: [
     secret(GEMINI_NAMES.apiKey, 'API Key Gemini'),
     {
@@ -22,8 +22,14 @@ const GEMINI_PAGE: SettingsVendorPage = {
       kind: 'text',
       defaultLabel: GEMINI_PRESET.defaultModel,
       discoverableModel: true,
-      note: 'Biarkan bawaan jika tidak perlu mengganti model. Tombol uji koneksi dapat memuat model Gemini yang tersedia.',
-      options: [{ value: GEMINI_PRESET.defaultModel, label: GEMINI_PRESET.defaultModel }],
+      note: 'MiniCut memakai Gemini 3.8 Flash sebagai bawaan. Klik Uji & muat model untuk melihat model yang benar-benar tersedia untuk API Key/proyek Google kamu.',
+      options: [
+        { value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash · gratis tersedia' },
+        { value: 'gemini-3.6-flash', label: 'Gemini 3.6 Flash · gratis tersedia' },
+        { value: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash · gratis tersedia' },
+        { value: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash-Lite · gratis tersedia' },
+        { value: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash-Lite · gratis tersedia' },
+      ],
     },
   ],
 };
