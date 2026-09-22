@@ -162,11 +162,15 @@ replaceRequired(
 }
 
 // ---- Gemini as MiniCut's primary agent provider ---------------------------
-replaceRequired(
-  'shared/llm-providers.ts',
-  "export const DEFAULT_LLM_PROVIDER: LlmProvider = 'anthropic';",
-  "export const DEFAULT_LLM_PROVIDER: LlmProvider = 'gemini';",
-);
+{
+  const rel = 'shared/llm-providers.ts';
+  let source = read(rel);
+  const anthropic = "export const DEFAULT_LLM_PROVIDER: LlmProvider = 'anthropic';";
+  const gemini = "export const DEFAULT_LLM_PROVIDER: LlmProvider = 'gemini';";
+  if (source.includes(anthropic)) source = source.replace(anthropic, gemini);
+  else if (!source.includes(gemini)) throw new Error('shared/llm-providers.ts default provider anchor not found');
+  write(rel, source);
+}
 {
   const rel = '.env.example';
   let s = read(rel);
